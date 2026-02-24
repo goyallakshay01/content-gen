@@ -13,7 +13,6 @@ const AUDIENCES = [
     "Business Owners",
     "Marketing Professionals",
     "Enterprise Decision Makers",
-    "General Consumers",
     "Corporate Decision Makers",
     "Real Estate Professionals",
     "Developers & Builders",
@@ -232,7 +231,13 @@ Produce content that builds authority, aligns with search intent, and converts.
             <style>{`
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+.app * {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
 
 body {
   background: #ffffff;
@@ -506,7 +511,7 @@ body {
                 <div className="container">
                     <div className="header">
                         <div className="badge">✦ AI-Powered</div>
-                        <h1>SEO Content<br />Studio</h1>
+                        <h1>Wasalt Content<br />Studio</h1>
                         <p>Generate search-optimized content for any topic, instantly.</p>
                     </div>
 
@@ -537,6 +542,26 @@ body {
                                     placeholder="e.g. Best practices for remote team management..."
                                     value={topic}
                                     onChange={e => setTopic(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="field">
+                                <label className="label">Primary Keyword</label>
+                                <input
+                                    className="kw-input"
+                                    placeholder="Main keyword..."
+                                    value={primaryKeyword}
+                                    onChange={e => setPrimaryKeyword(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="field">
+                                <label className="label">Secondary Keywords</label>
+                                <input
+                                    className="kw-input"
+                                    placeholder="keyword1, keyword2, keyword3"
+                                    value={secondaryKeywords}
+                                    onChange={e => setSecondaryKeywords(e.target.value)}
                                 />
                             </div>
 
@@ -592,34 +617,14 @@ body {
                                 />
                             </div>
 
-                            <div className="field">
+                            {/* <div className="field">
                                 <label className="label">Length</label>
                                 <div className="chips">
                                     {LENGTHS.map(l => (
                                         <div key={l} className={`chip ${length === l ? "active" : ""}`} onClick={() => setLength(l)}>{l}</div>
                                     ))}
                                 </div>
-                            </div>
-
-                            <div className="field">
-                                <label className="label">Primary Keyword</label>
-                                <input
-                                    className="kw-input"
-                                    placeholder="Main keyword..."
-                                    value={primaryKeyword}
-                                    onChange={e => setPrimaryKeyword(e.target.value)}
-                                />
-                            </div>
-
-                            <div className="field">
-                                <label className="label">Secondary Keywords</label>
-                                <input
-                                    className="kw-input"
-                                    placeholder="keyword1, keyword2, keyword3"
-                                    value={secondaryKeywords}
-                                    onChange={e => setSecondaryKeywords(e.target.value)}
-                                />
-                            </div>
+                            </div> */}
 
                             {/* <div className="field">
                                 <label className="label">Target Keywords (comma-separated)</label>
