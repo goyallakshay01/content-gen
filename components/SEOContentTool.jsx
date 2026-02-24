@@ -9,11 +9,18 @@ const LENGTHS = ["Short (~300 words)", "Medium (~600 words)", "Long (~1200 words
 const SEARCH_INTENTS = ["Informational", "Commercial", "Transactional", "Navigational"];
 const LANGUAGES = ["English", "Arabic"];
 const AUDIENCES = [
-    "Beginners",
+    "General Consumers",
     "Business Owners",
     "Marketing Professionals",
     "Enterprise Decision Makers",
-    "General Consumers"
+    "General Consumers",
+    "Corporate Decision Makers",
+    "Real Estate Professionals",
+    "Developers & Builders",
+    "Investors",
+    "High Net Worth Individuals",
+    "Property Seekers",
+    "Financial Professionals"
 ];
 
 export default function SEOContentTool() {
