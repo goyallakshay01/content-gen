@@ -137,7 +137,7 @@ Produce content that builds authority, aligns with search intent, and converts.
                 {
                     method: "POST",
                     headers: {
-                        "Authorization": `Bearer ${process.env.MISTRAL_API_KEY}`,
+                        "Authorization": `Bearer ${process.env.NEXT_PUBLIC_MYSTRAL_KEY}`,
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
