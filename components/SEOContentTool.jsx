@@ -112,9 +112,6 @@ STRUCTURE:
 - Key Takeaways section before conclusion
 - At least 5 FAQs
 
-SAUDI MARKET CONTEXT:
-If relevant to Saudi Arabia, include regional insights, Vision 2030 context, Riyadh/Jeddah/Dammam references.
-
 At the end include:
 - META TITLE (max 60 characters)
 - META DESCRIPTION (max 155 characters)
