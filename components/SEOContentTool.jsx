@@ -105,8 +105,7 @@ STRUCTURE:
 - Compelling H1 including primary keyword
 - Engaging introduction (first 150 words)
 - Table of Contents
-- H2 marked as ##
-- H3 marked as ###
+- Use Clear Subheading H2, H3
 - Short readable paragraphs
 - Bullet points & lists
 - Key Takeaways section before conclusion
