@@ -379,6 +379,7 @@ body {
 
 .output-panel {
   min-height: 500px;
+  max-width: 648px;
 }
 
 .empty-state {
