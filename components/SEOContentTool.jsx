@@ -40,10 +40,120 @@ export default function SEOContentTool() {
     const [content, setContent] = useState("");
     const [seoScore, setSeoScore] = useState(null);
     const [copied, setCopied] = useState(false);
+    const [saved, setSaved] = useState(false);
     const [streamText, setStreamText] = useState("");
+    const [savedFiles, setSavedFiles] = useState([]);
+    const [showLibrary, setShowLibrary] = useState(false);
+    const [loadingLibrary, setLoadingLibrary] = useState(false);
+    const [saveError, setSaveError] = useState("");
     const outputRef = useRef(null);
 
     const wordCount = (content || streamText).split(/\s+/).filter(Boolean).length;
+
+    // localStorage helpers
+    const LS_PREFIX = "seo-content:";
+
+    const lsGetAllKeys = () => {
+        try {
+            return Object.keys(localStorage).filter(k => k.startsWith(LS_PREFIX));
+        } catch { return []; }
+    };
+
+    const lsSet = (key, value) => {
+        try { localStorage.setItem(key, value); return true; }
+        catch { return false; }
+    };
+
+    const lsGet = (key) => {
+        try { return localStorage.getItem(key); }
+        catch { return null; }
+    };
+
+    const lsDelete = (key) => {
+        try { localStorage.removeItem(key); return true; }
+        catch { return false; }
+    };
+
+    // Load the list of saved files from localStorage
+    const fetchSavedFiles = async () => {
+        setLoadingLibrary(true);
+        try {
+            const keys = lsGetAllKeys();
+            const files = keys.map(key => {
+                try {
+                    const raw = lsGet(key);
+                    if (raw) return { key, ...JSON.parse(raw) };
+                } catch { return null; }
+                return null;
+            });
+            setSavedFiles(files.filter(Boolean).sort((a, b) => b.savedAt - a.savedAt));
+        } catch (e) {
+            setSavedFiles([]);
+        }
+        setLoadingLibrary(false);
+    };
+
+    const saveContent = () => {
+        if (!content) return;
+        setSaveError("");
+        const slug = topic
+            .toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, "")
+            .replace(/\s+/g, "-")
+            .slice(0, 50) || "content";
+        const timestamp = Date.now();
+        const key = `${LS_PREFIX}${slug}-${timestamp}`;
+        const payload = JSON.stringify({
+            topic,
+            primaryKeyword,
+            contentType,
+            language,
+            savedAt: timestamp,
+            content,
+            seoScore,
+            wordCount: content.split(/\s+/).filter(Boolean).length,
+            filename: `${slug}-${timestamp}.md`,
+        });
+        const ok = lsSet(key, payload);
+        if (ok) {
+            setSaved(true);
+            setTimeout(() => setSaved(false), 2500);
+        } else {
+            setSaveError("Save failed — localStorage may be full or unavailable.");
+        }
+    };
+
+    const loadFile = (file) => {
+        setContent(file.content);
+        setTopic(file.topic);
+        setPrimaryKeyword(file.primaryKeyword || "");
+        setContentType(file.contentType || "Blog Post");
+        setLanguage(file.language || "English");
+        setSeoScore(file.seoScore || null);
+        setShowLibrary(false);
+    };
+
+    const deleteFile = (key, e) => {
+        e.stopPropagation();
+        lsDelete(key);
+        setSavedFiles(prev => prev.filter(f => f.key !== key));
+    };
+
+    const downloadMd = () => {
+        if (!content) return;
+        const slug = topic
+            .toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, "")
+            .replace(/\s+/g, "-")
+            .slice(0, 50);
+        const blob = new Blob([content], { type: "text/markdown" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${slug || "content"}.md`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
 
     const generateContent = async () => {
         if (!topic.trim()) return;
@@ -51,29 +161,8 @@ export default function SEOContentTool() {
         setContent("");
         setStreamText("");
         setSeoScore(null);
+        setSaveError("");
 
-        // const wordTarget = length.includes("300") ? "~300" : length.includes("600") ? "~600" : "~1200";
-        const wordTarget = length.includes("300") ? 300 :
-            length.includes("600") ? 600 :
-                1200;
-        // const keywordList = keywords.trim() ? `Target keywords to naturally include: ${keywords}` : "";
-
-        //         const prompt = `You are an expert SEO content writer. Write high-quality, SEO-optimized ${contentType} content about: "${topic}"
-        // Tone: ${tone}
-        // Length: ${wordTarget} words
-        // ${keywordList}
-
-        // Requirements:
-        // - Include a compelling H1 title
-        // - Use H2/H3 subheadings (mark them with ## and ###)
-        // - Write naturally with target keywords woven in organically
-        // - Include a meta description at the end (label it "META DESCRIPTION:")
-        // - Optimize for search intent and readability
-        // - Add a clear call-to-action
-
-        // Write the full content now:`;
-
-        // Intent-based length logic
         const intentLengthMap = {
             Informational: "1,800 to 3,000 words",
             Commercial: "1,500 to 2,500 words",
@@ -124,16 +213,6 @@ Produce content that builds authority, aligns with search intent, and converts.
 `;
 
         try {
-            // const response = await fetch("https://api.anthropic.com/v1/messages", {
-            //   method: "POST",
-            //   headers: { "Content-Type": "application/json" },
-            //   body: JSON.stringify({
-            //     model: "claude-sonnet-4-20250514",
-            //     max_tokens: 2000,
-            //     messages: [{ role: "user", content: prompt }],
-            //   }),
-            // });
-
             const response = await fetch(
                 "https://api.mistral.ai/v1/chat/completions",
                 {
@@ -153,7 +232,6 @@ Produce content that builds authority, aligns with search intent, and converts.
             );
 
             const data = await response.json();
-
             const text = data?.choices?.[0]?.message?.content || "";
 
             if (!text) {
@@ -164,54 +242,17 @@ Produce content that builds authority, aligns with search intent, and converts.
 
             setContent(text);
 
-            // Generate fake SEO score for fun
-            // const kw = keywords.split(",").map(k => k.trim()).filter(Boolean);
-            // const kwFound = kw.filter(k => text.toLowerCase().includes(k.toLowerCase())).length;
-            // const kwScore = kw.length > 0 ? Math.round((kwFound / kw.length) * 40) : 30;
-            // const lengthScore = Math.min(30, Math.round((text.split(/\s+/).length / parseInt(wordTarget)) * 25));
-            // const score = Math.min(100, 35 + kwScore + lengthScore + (text.includes("META DESCRIPTION") ? 10 : 0));
-            // setSeoScore(score);
-
-            // Generate fake SEO score for fun
             const kw = keywords.split(",").map(k => k.trim()).filter(Boolean);
-
-            const kwFound = kw.filter(k =>
-                text.toLowerCase().includes(k.toLowerCase())
-            ).length;
-
-            const kwScore =
-                kw.length > 0 ? Math.round((kwFound / kw.length) * 40) : 30;
-
-            const lengthScore = Math.min(
-                30,
-                Math.round((text.split(/\s+/).length / parseInt(wordTarget)) * 25)
-            );
-
-            const score = Math.min(
-                100,
-                35 + kwScore + lengthScore +
-                (text.includes("META DESCRIPTION") ? 10 : 0)
-            );
-
+            const kwFound = kw.filter(k => text.toLowerCase().includes(k.toLowerCase())).length;
+            const kwScore = kw.length > 0 ? Math.round((kwFound / kw.length) * 40) : 30;
+            const wordTarget = 600;
+            const lengthScore = Math.min(30, Math.round((text.split(/\s+/).length / wordTarget) * 25));
+            const score = Math.min(100, 35 + kwScore + lengthScore + (text.includes("META DESCRIPTION") ? 10 : 0));
             setSeoScore(score);
         } catch (err) {
             setContent("Error generating content. Please try again.");
         }
         setLoading(false);
-    };
-
-    const formatContent = (text) => {
-        if (!text) return null;
-        return text.split("\n").map((line, i) => {
-            if (line.startsWith("### ")) return <h3 key={i} className="sub-heading">{line.slice(4)}</h3>;
-            if (line.startsWith("## ")) return <h2 key={i} className="section-heading">{line.slice(3)}</h2>;
-            if (line.startsWith("# ")) return <h1 key={i} className="content-title">{line.slice(2)}</h1>;
-            if (line.startsWith("**META DESCRIPTION:**") || line.startsWith("META DESCRIPTION:")) {
-                return <div key={i} className="meta-box"><span className="meta-label">META</span>{line.replace("**META DESCRIPTION:**", "").replace("META DESCRIPTION:", "")}</div>;
-            }
-            if (line.trim() === "") return <br key={i} />;
-            return <p key={i}>{line.replace(/\*\*(.*?)\*\*/g, (_, m) => `<strong>${m}</strong>`)}</p>;
-        });
     };
 
     const copyContent = () => {
@@ -227,17 +268,8 @@ Produce content that builds authority, aligns with search intent, and converts.
             <style>{`
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-.app * {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-}
-
-body {
-  background: #ffffff;
-}
+.app * { box-sizing: border-box; }
+body { margin: 0; background: #ffffff; }
 
 .app {
   min-height: 100vh;
@@ -281,6 +313,33 @@ body {
   margin-top: 10px;
 }
 
+.header-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.library-btn {
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  color: #333;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.library-btn:hover {
+  background: #000;
+  color: #fff;
+  border-color: #000;
+}
+
 .grid {
   display: grid;
   grid-template-columns: 380px 1fr;
@@ -315,8 +374,7 @@ body {
   display: block;
 }
 
-.topic-input,
-.kw-input {
+.topic-input, .kw-input {
   width: 100%;
   background: #ffffff;
   border: 1px solid #dcdcdc;
@@ -329,10 +387,7 @@ body {
   transition: border-color 0.2s;
 }
 
-.topic-input:focus,
-.kw-input:focus {
-  border-color: #000;
-}
+.topic-input:focus, .kw-input:focus { border-color: #000; }
 
 .chips {
   display: flex;
@@ -357,9 +412,7 @@ body {
   border-color: #000;
 }
 
-.chip:hover:not(.active) {
-  border-color: #000;
-}
+.chip:hover:not(.active) { border-color: #000; }
 
 .generate-btn {
   width: 100%;
@@ -376,14 +429,8 @@ body {
   margin-top: 8px;
 }
 
-.generate-btn:hover:not(:disabled) {
-  opacity: 0.85;
-}
-
-.generate-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+.generate-btn:hover:not(:disabled) { opacity: 0.85; }
+.generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .output-panel {
   min-height: 500px;
@@ -425,10 +472,18 @@ body {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
-.word-badge,
-.seo-badge {
+.content-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.word-badge, .seo-badge {
   background: #f5f5f5;
   border: 1px solid #e0e0e0;
   border-radius: 999px;
@@ -437,7 +492,13 @@ body {
   color: #333;
 }
 
-.copy-btn {
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.copy-btn, .save-btn, .download-btn {
   background: #f5f5f5;
   border: 1px solid #e0e0e0;
   color: #000;
@@ -445,11 +506,29 @@ body {
   padding: 6px 12px;
   font-size: 12px;
   cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.2s;
+  white-space: nowrap;
 }
 
-.copy-btn:hover {
+.copy-btn:hover, .download-btn:hover {
   background: #000;
   color: #fff;
+}
+
+.save-btn {
+  background: #000;
+  color: #fff;
+  border-color: #000;
+}
+
+.save-btn:hover { opacity: 0.8; }
+.save-btn.saved { background: #00d68f; border-color: #00d68f; }
+
+.save-error {
+  font-size: 11px;
+  color: #ff4d6d;
+  margin-top: 4px;
 }
 
 .content-body {
@@ -498,17 +577,161 @@ body {
   background: #e5e5e5;
   margin: 20px 0;
 }
+
+/* Library Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 680px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.modal-header h2 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #666;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.modal-close:hover { background: #f5f5f5; color: #000; }
+
+.modal-body {
+  overflow-y: auto;
+  padding: 16px 24px;
+  flex: 1;
+}
+
+.file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.file-card {
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.file-card:hover {
+  border-color: #000;
+  background: #fafafa;
+}
+
+.file-info { flex: 1; min-width: 0; }
+
+.file-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #000;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-meta {
+  font-size: 12px;
+  color: #888;
+  margin-top: 4px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.file-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.load-btn {
+  background: #000;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  white-space: nowrap;
+}
+
+.delete-btn {
+  background: none;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  color: #ff4d6d;
+  transition: all 0.2s;
+}
+
+.delete-btn:hover { background: #ff4d6d; color: #fff; border-color: #ff4d6d; }
+
+.empty-library {
+  text-align: center;
+  padding: 60px 20px;
+  color: #888;
+  font-size: 14px;
+}
+
+.empty-library .icon { font-size: 32px; margin-bottom: 12px; }
 `}</style>
 
             <div className="app">
-                <div className="bg-glow" />
-                <div className="bg-glow2" />
-
                 <div className="container">
                     <div className="header">
                         <div className="badge">✦ AI-Powered</div>
                         <h1>Wasalt Content<br />Studio</h1>
                         <p>Generate search-optimized content for any topic, instantly.</p>
+                        <div className="header-actions">
+                            <button
+                                className="library-btn"
+                                onClick={() => { setShowLibrary(true); fetchSavedFiles(); }}
+                            >
+                                📂 Saved Content Library
+                            </button>
+                        </div>
                     </div>
 
                     <div className="grid">
@@ -520,11 +743,7 @@ body {
                                 <label className="label">Language</label>
                                 <div className="chips">
                                     {LANGUAGES.map(lang => (
-                                        <div
-                                            key={lang}
-                                            className={`chip ${language === lang ? "active" : ""}`}
-                                            onClick={() => setLanguage(lang)}
-                                        >
+                                        <div key={lang} className={`chip ${language === lang ? "active" : ""}`} onClick={() => setLanguage(lang)}>
                                             {lang}
                                         </div>
                                     ))}
@@ -533,32 +752,17 @@ body {
 
                             <div className="field">
                                 <label className="label">Topic / Title</label>
-                                <textarea
-                                    className="topic-input"
-                                    placeholder="e.g. Best practices for remote team management..."
-                                    value={topic}
-                                    onChange={e => setTopic(e.target.value)}
-                                />
+                                <textarea className="topic-input" placeholder="e.g. Best practices for remote team management..." value={topic} onChange={e => setTopic(e.target.value)} />
                             </div>
 
                             <div className="field">
                                 <label className="label">Primary Keyword</label>
-                                <input
-                                    className="kw-input"
-                                    placeholder="Main keyword..."
-                                    value={primaryKeyword}
-                                    onChange={e => setPrimaryKeyword(e.target.value)}
-                                />
+                                <input className="kw-input" placeholder="Main keyword..." value={primaryKeyword} onChange={e => setPrimaryKeyword(e.target.value)} />
                             </div>
 
                             <div className="field">
                                 <label className="label">Secondary Keywords</label>
-                                <input
-                                    className="kw-input"
-                                    placeholder="keyword1, keyword2, keyword3"
-                                    value={secondaryKeywords}
-                                    onChange={e => setSecondaryKeywords(e.target.value)}
-                                />
+                                <input className="kw-input" placeholder="keyword1, keyword2, keyword3" value={secondaryKeywords} onChange={e => setSecondaryKeywords(e.target.value)} />
                             </div>
 
                             <div className="field">
@@ -574,13 +778,7 @@ body {
                                 <label className="label">Target Audience</label>
                                 <div className="chips">
                                     {AUDIENCES.map(a => (
-                                        <div
-                                            key={a}
-                                            className={`chip ${targetAudience === a ? "active" : ""}`}
-                                            onClick={() => setTargetAudience(a)}
-                                        >
-                                            {a}
-                                        </div>
+                                        <div key={a} className={`chip ${targetAudience === a ? "active" : ""}`} onClick={() => setTargetAudience(a)}>{a}</div>
                                     ))}
                                 </div>
                             </div>
@@ -605,38 +803,10 @@ body {
 
                             <div className="field">
                                 <label className="label">Country Target (Optional)</label>
-                                <input
-                                    className="kw-input"
-                                    placeholder="e.g. Saudi Arabia"
-                                    value={country}
-                                    onChange={e => setCountry(e.target.value)}
-                                />
+                                <input className="kw-input" placeholder="e.g. Saudi Arabia" value={country} onChange={e => setCountry(e.target.value)} />
                             </div>
 
-                            {/* <div className="field">
-                                <label className="label">Length</label>
-                                <div className="chips">
-                                    {LENGTHS.map(l => (
-                                        <div key={l} className={`chip ${length === l ? "active" : ""}`} onClick={() => setLength(l)}>{l}</div>
-                                    ))}
-                                </div>
-                            </div> */}
-
-                            {/* <div className="field">
-                                <label className="label">Target Keywords (comma-separated)</label>
-                                <input
-                                    className="kw-input"
-                                    placeholder="e.g. remote work, team productivity, collaboration"
-                                    value={keywords}
-                                    onChange={e => setKeywords(e.target.value)}
-                                />
-                            </div> */}
-
-                            <button
-                                className="generate-btn"
-                                onClick={generateContent}
-                                disabled={loading || !topic.trim()}
-                            >
+                            <button className="generate-btn" onClick={generateContent} disabled={loading || !topic.trim()}>
                                 {loading ? "Generating..." : "✦ Generate Content"}
                             </button>
                         </div>
@@ -653,7 +823,7 @@ body {
                             {loading && (
                                 <div className="loading-state">
                                     <div className="loader" />
-                                    <div className="loading-text">Crafting content<span className="loading-dots"><span>.</span><span>.</span><span>.</span></span></div>
+                                    <div>Crafting content...</div>
                                 </div>
                             )}
 
@@ -668,14 +838,25 @@ body {
                                                 </span>
                                             )}
                                         </div>
-                                        <button className="copy-btn" onClick={copyContent}>
-                                            {copied ? "✓ Copied!" : "Copy"}
-                                        </button>
+                                        <div className="action-buttons">
+                                            <button className="copy-btn" onClick={copyContent}>
+                                                {copied ? "✓ Copied!" : "Copy"}
+                                            </button>
+                                            <button
+                                                className={`save-btn ${saved ? "saved" : ""}`}
+                                                onClick={saveContent}
+                                            >
+                                                {saved ? "✓ Saved!" : "💾 Save as MD"}
+                                            </button>
+                                            <button className="download-btn" onClick={downloadMd}>
+                                                ⬇ Download MD
+                                            </button>
+                                        </div>
                                     </div>
+                                    {saveError && <div className="save-error">{saveError}</div>}
                                     <div className="divider" />
                                     <div className="content-body">
                                         <MarkdownRenderer content={content} />
-                                        {/* {formatContent(content)} */}
                                     </div>
                                 </>
                             )}
@@ -683,6 +864,56 @@ body {
                     </div>
                 </div>
             </div>
+
+            {/* Library Modal */}
+            {showLibrary && (
+                <div className="modal-overlay" onClick={() => setShowLibrary(false)}>
+                    <div className="modal" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2>📂 Saved Content Library</h2>
+                            <button className="modal-close" onClick={() => setShowLibrary(false)}>✕</button>
+                        </div>
+                        <div className="modal-body">
+                            {loadingLibrary ? (
+                                <div className="empty-library">
+                                    <div className="loader" style={{ margin: "0 auto 12px" }} />
+                                    <div>Loading saved files...</div>
+                                </div>
+                            ) : savedFiles.length === 0 ? (
+                                <div className="empty-library">
+                                    <div className="icon">📄</div>
+                                    <div>No saved content yet.</div>
+                                    <div style={{ marginTop: 6, fontSize: 12 }}>Generate content and click "Save as MD" to store it here.</div>
+                                </div>
+                            ) : (
+                                <div className="file-list">
+                                    {savedFiles.map(file => (
+                                        <div key={file.key} className="file-card">
+                                            <div className="file-info">
+                                                <div className="file-name">{file.topic || "Untitled"}</div>
+                                                <div className="file-meta">
+                                                    <span>🗂 {file.contentType}</span>
+                                                    <span>📝 {file.wordCount} words</span>
+                                                    {file.seoScore && <span style={{ color: file.seoScore >= 80 ? "#00d68f" : file.seoScore >= 60 ? "#ffaa00" : "#ff4d6d" }}>SEO {file.seoScore}/100</span>}
+                                                    <span>🕐 {new Date(file.savedAt).toLocaleDateString()}</span>
+                                                </div>
+                                                <div className="file-meta" style={{ marginTop: 2 }}>
+                                                    <span style={{ fontFamily: "monospace", fontSize: 11, color: "#aaa" }}>{file.filename}</span>
+                                                </div>
+                                            </div>
+                                            <div className="file-actions">
+                                                <button className="load-btn" onClick={() => loadFile(file)}>Load</button>
+                                                <button className="download-btn" onClick={(e) => { e.stopPropagation(); const blob = new Blob([file.content], { type: "text/markdown" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = file.filename || "content.md"; a.click(); URL.revokeObjectURL(url); }}>⬇</button>
+                                                <button className="delete-btn" onClick={(e) => deleteFile(file.key, e)}>✕</button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 }
