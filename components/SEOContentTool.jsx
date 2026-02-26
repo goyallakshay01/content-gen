@@ -46,6 +46,9 @@ export default function SEOContentTool() {
     const [showLibrary, setShowLibrary] = useState(false);
     const [loadingLibrary, setLoadingLibrary] = useState(false);
     const [saveError, setSaveError] = useState("");
+    const [suggestedTopics, setSuggestedTopics] = useState(['Real Estate Trends in Saudi Arabia', 'Luxury Property Investment Strategies', 'Navigating GCC Real Estate Laws']);
+    const [topicLoading, setTopicLoading] = useState(false);
+
     const outputRef = useRef(null);
 
     const wordCount = (content || streamText).split(/\s+/).filter(Boolean).length;
@@ -153,6 +156,130 @@ export default function SEOContentTool() {
         a.download = `${slug || "content"}.md`;
         a.click();
         URL.revokeObjectURL(url);
+    };
+
+    const suggestTopics = async () => {
+        setSuggestedTopics([]);
+        setTopicLoading(true);
+
+        const topicSuggestPrompt = `You are a senior real estate content strategist and market intelligence writer 
+specializing in GCC luxury property markets. You write for a premium real estate 
+media brand that covers NEW project launches, breaking investment news, and 
+emerging opportunities across Saudi Arabia, UAE, Qatar, Kuwait, Bahrain, and Oman.
+
+Your audience is:
+- Ultra-High-Net-Worth investors (local Gulf + international)
+- Family offices actively allocating capital into real estate
+- Institutional and private investors tracking Vision 2030 pipelines
+- Expat HNW buyers watching Saudi freehold zone developments
+- Real estate funds and developers scouting partnership opportunities
+
+CORE CONTENT MISSION:
+Position the brand as the #1 Arabic-Gulf real estate intelligence source for 
+investors who want to be FIRST to know about:
+→ New luxury project launches (off-plan & ready)
+→ Government-backed mega-developments going to market
+→ Emerging zones & cities being unlocked for private investment
+→ Policy changes opening new doors for foreign buyers
+→ Developer deals, IPOs, and funding rounds in the GCC property sector
+
+---
+
+Generate 25 blog topic ideas divided into the following categories:
+
+1. NEW PROJECT LAUNCH COVERAGE (6 topics)
+   → News-style articles announcing or deep-diving into brand new 
+     project launches in Saudi Arabia and GCC
+   → Examples of angle: first look, what's included, pricing tiers, 
+     ROI projections, who should buy
+   → Reference real projects like: NEOM, The Line, Sindalah Island, 
+     Diriyah Gate, Red Sea Project, Qiddiya, Roshn, Emaar KSA, 
+     Aldar Abu Dhabi, Lusail City Qatar
+
+2. INVESTOR NEWS & MARKET INTELLIGENCE (5 topics)
+   → Time-sensitive, data-driven news blogs for active investors
+   → Covers: policy shifts, new freehold zones, mortgage regulation 
+     updates, foreign ownership law changes, developer announcements
+   → Tone: urgent, credible, Bloomberg-style but accessible
+
+3. UPCOMING BUSINESS OPPORTUNITIES (5 topics)
+   → Forward-looking pieces on WHERE and WHAT to invest in next
+   → Focus on: pre-launch windows, early-bird pricing phases, 
+     undervalued emerging districts, commercial+residential mixed plays
+   → Include cities like: Riyadh North, NEOM Regions, AlUla, 
+     Jeddah Waterfront, Lusail, Saadiyat Island expansion
+
+4. ROI & INVESTMENT ANALYSIS BLOGS (5 topics)
+   → Data-backed comparisons and projections for HNW decision-making
+   → Examples: rental yield comparisons across GCC cities, 
+     off-plan vs ready property ROI in 2025, 
+     capital appreciation forecasts in Vision 2030 zones
+
+5. THOUGHT LEADERSHIP & FUTURE OUTLOOK (4 topics)
+   → Big-picture perspectives that establish brand authority
+   → Topics like: the next 5 years of Saudi real estate, 
+     how Vision 2030 is reshaping generational wealth, 
+     why global billionaires are pivoting to Gulf property
+
+---
+
+FOR EACH TOPIC PROVIDE:
+- Blog title (specific, not generic)
+- Target keyword (for SEO)
+- Content angle (1-2 lines explaining the hook)
+- Funnel stage: [AWARENESS / CONSIDERATION / DECISION]
+- Best format: [News Article / Deep Dive / Listicle / Opinion / Data Report]
+- Urgency tag: [BREAKING / TRENDING / EVERGREEN / SEASONAL]
+
+---
+
+STRICT RULES:
+- NO generic titles — every title must name a specific city, project, 
+  policy, or number (e.g. "5 Off-Plan Projects in Riyadh Launching Q1 2025")
+- Write titles that feel like premium financial media, not generic blogs
+- Prioritize Saudi Arabia as the primary market, GCC as secondary
+- Reflect Islamic finance sensitivity and Gulf cultural investment values
+- Assume the reader manages serious capital and respects precision over hype`;
+
+        try {
+            const response = await fetch(
+                "https://api.mistral.ai/v1/chat/completions",
+                {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${process.env.NEXT_PUBLIC_MYSTRAL_KEY}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        model: "mistral-small-latest",
+                        temperature: 0.3,
+                        messages: [
+                            { role: "user", content: topicSuggestPrompt }
+                        ]
+                    })
+                }
+            );
+
+            const data = await response.json();
+            const text = data?.choices?.[0]?.message?.content || "";
+
+            if (!text) {
+                setSuggestedTopics("No content returned.");
+                setTopicLoading(false);
+                return;
+            }
+
+            const titles = [...text.matchAll(/\d+\.\s+\*\*"([^"]+)"\*\*/g)]
+                .map(match => match[1])
+                .filter(Boolean);
+
+            setSuggestedTopics(titles);
+            setTopicLoading(false);
+
+        } catch (err) {
+            setSuggestedTopics("Error generating Topics. Please try again.");
+        }
+        setTopicLoading(false);
     };
 
     const generateContent = async () => {
@@ -287,6 +414,70 @@ body { margin: 0; background: #ffffff; }
 .header {
   text-align: center;
   margin-bottom: 48px;
+}
+
+.topicSuggestContainer {
+  margin-top: 32px;
+  margin-bottom: 32px;
+}
+
+.topicSuggestHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.topicSuggestHeader h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.topicSuggestList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.topicSuggestItem {
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  color: #333;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.topicSuggestItem:hover {
+  background: #000;
+  color: #fff;
+  border-color: #000;
+}
+
+.generate-btn.small {
+  width: auto;
+  padding: 8px 18px;
+  font-size: 13px;
+  border-radius: 999px;
+}
+
+.topicSuggestPlaceholder {
+  width: 100%;
+  padding: 18px;
+  border: 1px dashed #e0e0e0;
+  border-radius: 12px;
+  text-align: center;
+  font-size: 13px;
+  color: #888;
+  background: #fafafa;
+  font-style: italic;
 }
 
 .badge {
@@ -731,6 +922,47 @@ body { margin: 0; background: #ffffff; }
                             >
                                 📂 Saved Content Library
                             </button>
+                        </div>
+                    </div>
+
+                    <div className="topicSuggestContainer">
+                        <div className="topicSuggestHeader">
+                            <h3>Suggested Topics</h3>
+                            <button
+                                className="generate-btn small"
+                                style={{ width: "auto", padding: "8px 16px", marginTop: 0 }}
+                                onClick={suggestTopics}
+                                disabled={topicLoading}
+                            >
+                                {topicLoading ? "Generating..." : "✦ Generate New"}
+                            </button>
+                        </div>
+
+                        <div className="topicSuggestList">
+
+                            {topicLoading && (
+                                <div className="topicSuggestPlaceholder">
+                                    Generating elite topic ideas...
+                                </div>
+                            )}
+
+                            {!topicLoading && (!suggestedTopics || suggestedTopics.length === 0) && (
+                                <div className="topicSuggestPlaceholder">
+                                    ✦ Tap “Generate New” to unlock premium real estate content ideas.
+                                </div>
+                            )}
+
+                            {!topicLoading && Array.isArray(suggestedTopics) && suggestedTopics.length > 0 &&
+                                suggestedTopics.map((item, index) => (
+                                    <div
+                                        key={index}
+                                        className="topicSuggestItem"
+                                        onClick={() => setTopic(item)}
+                                    >
+                                        {item}
+                                    </div>
+                                ))
+                            }
                         </div>
                     </div>
 
