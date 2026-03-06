@@ -1,17 +1,28 @@
 "use client";
 
+import { redirect } from "next/navigation";
 import { useState } from "react";
-import { loginAction } from "./actions";
 
 export default function LoginPage() {
   const [error, setError] = useState("");
 
   async function handleAction(formData: FormData) {
-    const res = await loginAction(formData);
+    const dataObj = Object.fromEntries(formData.entries());
+    const response = await fetch("/api/loginApi", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: btoa(JSON.stringify(dataObj)),
+    });
 
-    if (res?.error) {
-      setError(res.error);
+    const data = await response.json();
+
+    if (!response.ok) {
+      setError(data?.error || "Login failed");
+      return;
     }
+    redirect("/");
   }
 
   return (
