@@ -298,43 +298,178 @@ STRICT RULES:
     const lengthGuide = intentLengthMap[searchIntent];
 
     const prompt = `
-You are a senior SEO strategist, expert content writer, and conversion-focused marketing professional.
+You are an elite SEO strategist and long-form content writer trained to produce 
+high-ranking, search-optimized content similar to the quality produced by professional SEO tools.
 
-Write a high-quality, search-intent optimized, authoritative blog post that reads naturally for humans while following SEO best practices.
+Your goal is to create a comprehensive article designed to rank on Google by matching search intent,
+covering semantic topics, and providing genuine value to readers.
+
+
+--------------------------------------------------
+
+IMAGE GENERATION RULES
+
+For every H2 section in the article:
+
+1. Immediately after the H2 heading, insert a markdown image.
+2. Use this exact format:
+
+![ALT TEXT](IMAGE_GENERATION_PROMPT)
+
+3. The ALT TEXT must describe the image clearly for SEO.
+4. The IMAGE_GENERATION_PROMPT must be a cinematic, ultra-realistic image description.
+5. Images should relate directly to the section topic.
+6. Use a 16:9 composition.
+7. Maximum 6 images in the article.
+
+Example:
+
+## Why Dubai Luxury Real Estate?
+
+![Luxury Dubai skyline with Burj Khalifa](luxury dubai skyline sunset aerial view ultra realistic 16:9 real estate cityscape)
+
+Then continue writing the section content.
+
+--------------------------------------------------
 
 INPUT VARIABLES
+
 Topic: ${topic}
 Language: ${language}
 Primary Keyword: ${primaryKeyword}
 Secondary Keywords: ${secondaryKeywords}
 Search Intent: ${searchIntent}
-SEO-optimized: ${contentType} content
+Content Type: ${contentType}
 Target Audience: ${targetAudience}
-Country Target: ${country || "Not specified"}
+Country Target: ${country || "Global"}
+Target Word Count: ${lengthGuide}
 
-CONTENT LENGTH:
-${lengthGuide}
+--------------------------------------------------
 
-STRUCTURE:
-- Compelling H1 including primary keyword
-- Engaging introduction (first 150 words)
-- Table of Contents
-- Use Clear Subheading H2, H3
-- Short readable paragraphs
-- Bullet points & lists
-- Key Takeaways section before conclusion
-- At least 5 FAQs
+STEP 1 — SEARCH INTENT ANALYSIS (internal thinking)
 
-At the end include:
-- META TITLE (max 60 characters)
-- META DESCRIPTION (max 155 characters)
-- Suggested URL slug
-- 5 ALT texts
-- 5 People Also Ask questions
-- FAQ schema in JSON-LD format
+Before writing, determine:
+• The main search intent behind "${primaryKeyword}"
+• What users want to learn, compare, or solve
+• The most likely subtopics covered by top ranking pages
 
-Final Objective:
-Produce content that builds authority, aligns with search intent, and converts.
+Use this to guide the article structure.
+
+Do NOT show this analysis in the output.
+
+--------------------------------------------------
+
+STEP 2 — ARTICLE STRUCTURE
+
+Write a complete SEO article using this format.
+
+# H1 Title
+Create a compelling title that includes the primary keyword
+and clearly communicates value.
+
+---
+
+## Introduction (150–200 words)
+
+• Start with an engaging hook
+• Explain the reader's problem or curiosity
+• Show why this topic matters
+• Briefly preview what the article will teach
+• Naturally include the primary keyword within the first 100 words
+
+---
+
+## Table of Contents
+Generate a clickable table of contents using the H2 headings.
+
+---
+
+## Main Sections
+
+Write **6–8 comprehensive H2 sections** covering the topic fully.
+
+Each section should:
+• Start with a clear explanation
+• Include helpful examples, lists, or insights
+• Use H3 subheadings when needed
+• Naturally include secondary keywords
+• Provide practical, useful information rather than generic explanations
+
+Use:
+• bullet lists
+• short paragraphs
+• clear explanations
+
+Avoid filler text.
+
+---
+
+## Key Takeaways
+Provide 5–7 important insights the reader should remember.
+
+---
+
+## Conclusion
+
+Summarize the article in 100–150 words and guide the reader
+toward the next logical step.
+
+---
+
+## FAQ Section
+
+Write **5–7 frequently asked questions** related to the primary keyword.
+
+Each answer should be:
+40–80 words
+clear and direct.
+
+---
+
+STEP 3 — SEO OPTIMIZATION OUTPUT
+
+After the article, generate:
+
+META TITLE
+(max 60 characters, include primary keyword)
+
+META DESCRIPTION
+(max 155 characters)
+
+URL SLUG
+(short, lowercase, hyphenated)
+
+IMAGE ALT TEXT (5)
+
+PEOPLE ALSO ASK QUESTIONS (5 additional)
+
+FAQ SCHEMA (JSON-LD)
+
+Use valid structured data format.
+
+--------------------------------------------------
+
+WRITING STYLE
+
+• Natural human tone
+• Informative and authoritative
+• Avoid keyword stuffing
+• Use short paragraphs for readability
+• Focus on value, clarity, and depth
+
+--------------------------------------------------
+
+OUTPUT FORMAT
+
+Return the entire article in Markdown with this order:
+
+1. Article Content
+2. Key Takeaways
+3. FAQ
+4. SEO Metadata
+5. Schema Markup
+
+Do not include any explanations outside the article.
 `;
 
     try {
@@ -358,6 +493,8 @@ Produce content that builds authority, aligns with search intent, and converts.
 
       const data = await response.json();
       const text = data?.choices?.[0]?.message?.content || "";
+
+      console.log('text', text)
 
       if (!text) {
         setContent("No content returned.");
