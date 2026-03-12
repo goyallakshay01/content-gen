@@ -1,6 +1,7 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import MarkdownRenderer from "./MarkdownRenderer.jsx";
+import "./SEOContentTool.css";
 
 const TONES = ["Professional", "Conversational", "Authoritative", "Friendly"];
 const CONTENT_TYPES = ["Blog Post", "Product Description", "Landing Page", "Social Media", "Meta Description"];
@@ -26,7 +27,6 @@ export default function SEOContentTool() {
   const [topic, setTopic] = useState("");
   const [tone, setTone] = useState("Professional");
   const [contentType, setContentType] = useState("Blog Post");
-  const [length, setLength] = useState("Medium (~600 words)");
 
   const [language, setLanguage] = useState("English");
   const [searchIntent, setSearchIntent] = useState("Informational");
@@ -35,7 +35,6 @@ export default function SEOContentTool() {
   const [targetAudience, setTargetAudience] = useState("Business Owners");
   const [country, setCountry] = useState("");
 
-  const [keywords, setKeywords] = useState("");
   const [loading, setLoading] = useState(false);
   const [content, setContent] = useState("");
   const [seoScore, setSeoScore] = useState(null);
@@ -49,11 +48,11 @@ export default function SEOContentTool() {
   const [suggestedTopics, setSuggestedTopics] = useState(['Real Estate Trends in Saudi Arabia', 'Luxury Property Investment Strategies', 'Navigating Saudi Real Estate Laws']);
   const [topicLoading, setTopicLoading] = useState(false);
 
-  const outputRef = useRef(null);
+  const [selectedOption, setSelectedOption] = useState("");
 
+  const outputRef = useRef(null);
   const wordCount = (content || streamText).split(/\s+/).filter(Boolean).length;
 
-  // localStorage helpers
   const LS_PREFIX = "seo-content:";
 
   const lsGetAllKeys = () => {
@@ -77,7 +76,6 @@ export default function SEOContentTool() {
     catch { return false; }
   };
 
-  // Load the list of saved files from localStorage
   const fetchSavedFiles = async () => {
     setLoadingLibrary(true);
     try {
@@ -527,528 +525,11 @@ Do not include any explanations outside the article.
 
   return (
     <>
-      <style>{`
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-.app * { box-sizing: border-box; }
-body { margin: 0; background: #ffffff; }
-
-.app {
-  min-height: 100vh;
-  background: #ffffff;
-  font-family: 'Inter', sans-serif;
-  color: #000000;
-}
-
-.container {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 40px 24px;
-}
-
-.header {
-  text-align: center;
-  margin-bottom: 48px;
-}
-
-.topicSuggestContainer {
-  margin-top: 32px;
-  margin-bottom: 32px;
-}
-
-.topicSuggestHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.topicSuggestHeader h3 {
-  font-size: 16px;
-  font-weight: 600;
-  color: #333;
-  margin: 0;
-}
-
-.topicSuggestList {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.topicSuggestItem {
-  background: #f5f5f5;
-  border: 1px solid #e0e0e0;
-  border-radius: 999px;
-  padding: 6px 14px;
-  font-size: 13px;
-  cursor: pointer;
-  color: #333;
-  transition: all 0.2s;
-  white-space: nowrap;
-}
-
-.topicSuggestItem:hover {
-  background: #000;
-  color: #fff;
-  border-color: #000;
-}
-
-.generate-btn.small {
-  width: auto;
-  padding: 8px 18px;
-  font-size: 13px;
-  border-radius: 999px;
-}
-
-.topicSuggestPlaceholder {
-  width: 100%;
-  padding: 18px;
-  border: 1px dashed #e0e0e0;
-  border-radius: 12px;
-  text-align: center;
-  font-size: 13px;
-  color: #888;
-  background: #fafafa;
-  font-style: italic;
-}
-
-.badge {
-  display: inline-block;
-  background: #f3f3f3;
-  border: 1px solid #e5e5e5;
-  color: #555;
-  font-size: 12px;
-  padding: 6px 14px;
-  border-radius: 999px;
-  margin-bottom: 16px;
-}
-
-.header h1 {
-  font-size: clamp(32px, 5vw, 48px);
-  font-weight: 700;
-  line-height: 1.2;
-  color: #000;
-}
-
-.header p {
-  font-size: 16px;
-  color: #666;
-  margin-top: 10px;
-}
-
-.header-actions {
-  display: flex;
-  justify-content: center;
-  margin-top: 16px;
-}
-
-.library-btn {
-  background: #f5f5f5;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 8px 18px;
-  font-size: 13px;
-  font-family: 'Inter', sans-serif;
-  cursor: pointer;
-  color: #333;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.library-btn:hover {
-  background: #000;
-  color: #fff;
-  border-color: #000;
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: 380px 1fr;
-  gap: 24px;
-  align-items: start;
-}
-
-@media (max-width: 800px) {
-  .grid { grid-template-columns: 1fr; }
-}
-
-.panel {
-  background: #ffffff;
-  border: 1px solid #e5e5e5;
-  border-radius: 12px;
-  padding: 24px;
-}
-
-.panel-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 20px;
-}
-
-.field { margin-bottom: 20px; }
-
-.label {
-  font-size: 12px;
-  color: #555;
-  margin-bottom: 6px;
-  display: block;
-}
-
-.topic-input, .kw-input {
-  width: 100%;
-  background: #ffffff;
-  border: 1px solid #dcdcdc;
-  border-radius: 8px;
-  color: #000;
-  font-family: 'Inter', sans-serif;
-  font-size: 14px;
-  padding: 12px;
-  outline: none;
-  transition: border-color 0.2s;
-}
-
-.topic-input:focus, .kw-input:focus { border-color: #000; }
-
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.chip {
-  background: #f5f5f5;
-  border: 1px solid #e0e0e0;
-  border-radius: 999px;
-  padding: 6px 14px;
-  font-size: 13px;
-  cursor: pointer;
-  color: #333;
-  transition: all 0.2s;
-}
-
-.chip.active {
-  background: #000;
-  color: #fff;
-  border-color: #000;
-}
-
-.chip:hover:not(.active) { border-color: #000; }
-
-.generate-btn {
-  width: 100%;
-  padding: 14px;
-  border-radius: 8px;
-  background: #000;
-  border: none;
-  color: #fff;
-  font-family: 'Inter', sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.2s;
-  margin-top: 8px;
-}
-
-.generate-btn:hover:not(:disabled) { opacity: 0.85; }
-.generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.output-panel {
-  min-height: 500px;
-  max-width: 648px;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 400px;
-  color: #888;
-  text-align: center;
-}
-
-.loading-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 400px;
-  gap: 20px;
-}
-
-.loader {
-  width: 36px;
-  height: 36px;
-  border: 3px solid #e5e5e5;
-  border-top-color: #000;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin { to { transform: rotate(360deg); } }
-
-.content-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.content-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.word-badge, .seo-badge {
-  background: #f5f5f5;
-  border: 1px solid #e0e0e0;
-  border-radius: 999px;
-  padding: 5px 12px;
-  font-size: 12px;
-  color: #333;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.copy-btn, .save-btn, .download-btn {
-  background: #f5f5f5;
-  border: 1px solid #e0e0e0;
-  color: #000;
-  border-radius: 6px;
-  padding: 6px 12px;
-  font-size: 12px;
-  cursor: pointer;
-  font-family: 'Inter', sans-serif;
-  transition: all 0.2s;
-  white-space: nowrap;
-}
-
-.copy-btn:hover, .download-btn:hover {
-  background: #000;
-  color: #fff;
-}
-
-.save-btn {
-  background: #000;
-  color: #fff;
-  border-color: #000;
-}
-
-.save-btn:hover { opacity: 0.8; }
-.save-btn.saved { background: #00d68f; border-color: #00d68f; }
-
-.save-error {
-  font-size: 11px;
-  color: #ff4d6d;
-  margin-top: 4px;
-}
-
-.content-body {
-  line-height: 1.7;
-}
-
-.content-title {
-  font-size: 22px;
-  font-weight: 700;
-  margin-bottom: 16px;
-  color: #000;
-}
-
-.section-heading {
-  font-size: 18px;
-  font-weight: 600;
-  margin: 24px 0 10px;
-  color: #000;
-}
-
-.sub-heading {
-  font-size: 16px;
-  font-weight: 600;
-  margin: 18px 0 8px;
-  color: #000;
-}
-
-.content-body p {
-  font-size: 14px;
-  color: #333;
-  margin-bottom: 12px;
-}
-
-.meta-box {
-  background: #f9f9f9;
-  border: 1px solid #e5e5e5;
-  border-radius: 8px;
-  padding: 12px;
-  margin-top: 20px;
-  font-size: 13px;
-  color: #333;
-}
-
-.divider {
-  height: 1px;
-  background: #e5e5e5;
-  margin: 20px 0;
-}
-
-/* Library Modal */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.5);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-}
-
-.modal {
-  background: #fff;
-  border-radius: 16px;
-  width: 100%;
-  max-width: 680px;
-  max-height: 80vh;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-}
-
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 24px;
-  border-bottom: 1px solid #e5e5e5;
-}
-
-.modal-header h2 {
-  font-size: 16px;
-  font-weight: 600;
-  margin: 0;
-}
-
-.modal-close {
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  color: #666;
-  padding: 4px 8px;
-  border-radius: 6px;
-  transition: all 0.2s;
-}
-
-.modal-close:hover { background: #f5f5f5; color: #000; }
-
-.modal-body {
-  overflow-y: auto;
-  padding: 16px 24px;
-  flex: 1;
-}
-
-.file-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.file-card {
-  border: 1px solid #e5e5e5;
-  border-radius: 10px;
-  padding: 14px 16px;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.file-card:hover {
-  border-color: #000;
-  background: #fafafa;
-}
-
-.file-info { flex: 1; min-width: 0; }
-
-.file-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: #000;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.file-meta {
-  font-size: 12px;
-  color: #888;
-  margin-top: 4px;
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.file-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.load-btn {
-  background: #000;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 5px 12px;
-  font-size: 12px;
-  cursor: pointer;
-  font-family: 'Inter', sans-serif;
-  white-space: nowrap;
-}
-
-.delete-btn {
-  background: none;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  padding: 5px 10px;
-  font-size: 12px;
-  cursor: pointer;
-  color: #ff4d6d;
-  transition: all 0.2s;
-}
-
-.delete-btn:hover { background: #ff4d6d; color: #fff; border-color: #ff4d6d; }
-
-.empty-library {
-  text-align: center;
-  padding: 60px 20px;
-  color: #888;
-  font-size: 14px;
-}
-
-.empty-library .icon { font-size: 32px; margin-bottom: 12px; }
-`}</style>
-
       <div className="app">
         <div className="container">
           <div className="header">
             <div className="badge">✦ AI-Powered</div>
-            <h1>Wasalt Content<br />Studio</h1>
+            <h1>Content<br />Studio</h1>
             <p>Generate search-optimized content for any topic, instantly.</p>
             <div className="header-actions">
               <button
@@ -1105,6 +586,13 @@ body { margin: 0; background: #ffffff; }
             {/* Controls */}
             <div className="panel">
               <div className="panel-title">⚙ Configure</div>
+              <div className="dropdown-group">
+                <select className="dropdown" value={selectedOption} onChange={e => setSelectedOption(e.target.value)}>
+                  <option value="">Select an option</option>
+                  <option value="option1">Darglobal</option>
+                  <option value="option2">Wasalt</option>
+                </select>
+              </div>
 
               <div className="field">
                 <label className="label">Language</label>
@@ -1232,7 +720,6 @@ body { margin: 0; background: #ffffff; }
         </div>
       </div>
 
-      {/* Library Modal */}
       {showLibrary && (
         <div className="modal-overlay" onClick={() => setShowLibrary(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
