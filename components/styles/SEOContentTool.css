@@ -54,16 +54,20 @@ body {
   gap: 8px;
 }
 
-.topicSuggestItem {
-  background: #f5f5f5;
-  border: 1px solid #e0e0e0;
-  border-radius: 999px;
-  padding: 6px 14px;
-  font-size: 13px;
-  cursor: pointer;
-  color: #333;
-  transition: all 0.2s;
-  white-space: nowrap;
+.topicSuggestItem{
+  padding:12px;
+  border-bottom:1px solid #eee;
+  cursor:pointer;
+}
+
+.topicTitle{
+  font-weight:600;
+  font-size:14px;
+}
+
+.topicKeyword{
+  font-size:12px;
+  color:#888;
 }
 
 .topicSuggestItem:hover {

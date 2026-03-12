@@ -310,61 +310,139 @@ Keep the response structured, concise, and blog-ready.
     const brandContext = await generateBrandContext(brandName);
 
     const topicSuggestPrompt = `
-You are a senior real estate content strategist and SEO expert.
+You are a senior real estate content strategist and luxury property market analyst.
 
-Below is the brand intelligence profile.
+Your goal is to generate **high-value blog topics for a luxury real estate investment blog.**
 
-----------------------------------
+The company focuses on:
+• branded residences by ${brandContext}
+• luxury developments
+• global real estate investment opportunities
+• projects by developers such as ${brandContext} and other global collaborations
+
+These blogs will support:
+• internal linking to property pages
+• internal linking to investment guides
+• external linking to market data sources
+
+Therefore the tone should sound like **premium real estate media with developer authority.**
+
+---
+
+STEP 1 — Discover Current Projects
+
+Identify **5–6 active luxury real estate projects or branded residence collaborations globally**.
+
+Focus on developments associated with:
+
 ${brandContext}
-----------------------------------
 
-Using the brand intelligence above, generate **high-value blog topics**
-that align with the company's business model, audience, and markets.
+Examples of search intent to simulate:
 
-Your audience may include:
-• Real estate investors
-• Property buyers
-• Developers
-• High-net-worth individuals
-• Institutional investors
+- "${brandContext} new launches"
+- "${brandContext} branded residences"
+- "${brandContext} luxury developments"
+- "${brandContext} Lamborghini collaboration"
+- "${brandContext} Aston Martin residences"
 
----
+For each project capture:
 
-Generate 25 blog topic ideas divided into the following categories:
-
-1. NEW PROJECT LAUNCH COVERAGE (6 topics)
-
-2. INVESTOR NEWS & MARKET INTELLIGENCE (5 topics)
-
-3. UPCOMING BUSINESS OPPORTUNITIES (5 topics)
-
-4. ROI & INVESTMENT ANALYSIS BLOGS (5 topics)
-
-5. THOUGHT LEADERSHIP & FUTURE OUTLOOK (4 topics)
+Project: name  
+Location: city / country  
+Brand: collaboration partner (if applicable)
 
 ---
 
-FOR EACH TOPIC PROVIDE:
+STEP 2 — Create Projects Context
 
-- Blog title
-- Target keyword
-- Content angle (1–2 lines)
-- Funnel stage: [AWARENESS / CONSIDERATION / DECISION]
-- Best format: [News Article / Deep Dive / Listicle / Opinion / Data Report]
-- Urgency tag: [BREAKING / TRENDING / EVERGREEN / SEASONAL]
+Return a section called:
+
+## Projects Context
+
+Project: Name  
+Location: City / Country  
+Brand: Collaboration partner
 
 ---
 
-STRICT RULES
+STEP 3 — Generate Blog Topics
 
-• Titles must feel like premium financial media
-• Avoid generic blog titles
-• Use specific locations, numbers, or developments
-• Align topics with the brand's market focus
-• Prioritize real estate investment intelligence
-• Assume the reader manages serious capital
+Using ONLY the projects identified above, generate **5–6 premium blog titles.**
 
-Return topics in structured markdown format.
+IMPORTANT RULES
+
+• The **title MUST start with the property name**
+• Include the **brand collaboration**
+• Mention **DarGlobal in the title when possible**
+• Mention the **location**
+• Titles must sound like **financial media or luxury real estate publications**
+
+This helps create **internal linking opportunities** between:
+
+• project pages  
+• branded residence articles  
+• luxury real estate market reports  
+• investment analysis blogs  
+
+---
+
+TITLE STRUCTURE (MANDATORY)
+
+Use patterns like:
+
+[Project Name] by [Brand]: How ${brandContext} Is Redefining Luxury Living in [City]
+
+[Project Name] by [Brand]: Inside ${brandContext}'s Most Ambitious Branded Residence
+
+[Project Name] by [Brand]: Why Investors Are Watching ${brandContext}'s [City] Development
+
+[Project Name] by [Brand]: A New Landmark in ${brandContext}'s Global Luxury Portfolio
+
+If no brand exists:
+
+[Project Name]: A New Luxury Development by ${brandContext} in [City]
+
+---
+
+SEARCH TERM RULES
+
+Search terms must include:
+
+• project name  
+• brand collaboration  
+• location  
+• developer name when relevant
+
+Example:
+
+Search term: "Tierra Viva Lamborghini villas Marbella DarGlobal"
+
+---
+
+RETURN FORMAT
+
+## Projects Context
+
+Project: Example  
+Location: Example  
+Brand: Example
+
+Project: Example  
+Location: Example  
+Brand: Example
+
+
+## Blog Topics
+
+Title: Example premium headline  
+Search term: SEO keyword
+
+Title: Example premium headline  
+Search term: SEO keyword
+
+Generate **5–6 topics only**.
+
+Do not include numbering or explanations.
 `;
 
     try {
@@ -387,10 +465,17 @@ Return topics in structured markdown format.
       const data = await response.json();
       const text = data?.choices?.[0]?.message?.content || "";
 
-      const matches = [...text.matchAll(/\*\*\d+\.\s*"([^"]+)"\*\*/g)];
-      const titles = matches.map(m => m[1]);
+      const topicMatches = [
+        ...text.matchAll(/\*\*Title:\*\*\s*(.*?)\n\*\*Search term:\*\*\s*"([^"]+)"/g)
+      ];
 
-      setSuggestedTopics(titles);
+      const topics = topicMatches.map(m => ({
+        title: m[1].trim(),
+        searchTerm: m[2].trim()
+      }));
+
+      setSuggestedTopics(topics);
+
 
     } catch {
       setSuggestedTopics("Error generating topics.");
@@ -723,9 +808,10 @@ Do not add custom HTML wrappers.
                   <div
                     key={index}
                     className="topicSuggestItem"
-                    onClick={() => setTopic(item)}
+                    onClick={() => setTopic(item.title)}
                   >
-                    {item}
+                    <div className="topicTitle">{item.title}</div>
+                    <div className="topicKeyword">{item.searchTerm}</div>
                   </div>
                 ))
               }
