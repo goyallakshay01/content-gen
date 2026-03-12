@@ -476,7 +476,6 @@ Do not include numbering or explanations.
 
       setSuggestedTopics(topics);
 
-
     } catch {
       setSuggestedTopics("Error generating topics.");
     }
@@ -508,6 +507,7 @@ high-ranking, search-optimized content similar to the quality produced by profes
 Your goal is to create a comprehensive article designed to rank on Google by matching search intent,
 covering semantic topics, and providing genuine value to readers.
 
+Target average article length: **3,800–4,000 words (approx. 3,856 words).**
 
 --------------------------------------------------
 
@@ -536,6 +536,35 @@ Then continue writing the section content.
 
 --------------------------------------------------
 
+LINKING RULES
+
+Include both **internal and external links** naturally inside the content.
+
+INTERNAL LINKS
+Link to relevant internal blog articles or property pages using contextual anchor text.
+
+Example:
+[Dubai luxury property investment guide](/blog/dubai-luxury-property-investment-guide)
+
+Use 4–6 internal links throughout the article.
+
+EXTERNAL LINKS
+Link to authoritative external resources such as:
+
+• government real estate data
+• global property reports
+• economic data sources
+• credible industry publications
+
+Example:
+[Knight Frank Global Wealth Report](https://www.knightfrank.com/research)
+
+Use 3–5 external links maximum.
+
+Do not overlink.
+
+--------------------------------------------------
+
 INPUT VARIABLES
 
 Topic: ${topic}
@@ -546,13 +575,14 @@ Search Intent: ${searchIntent}
 Content Type: ${contentType}
 Target Audience: ${targetAudience}
 Country Target: ${country || "Global"}
-Target Word Count: ${lengthGuide}
+Target Word Count: ${lengthGuide || "3856"}
 
 --------------------------------------------------
 
 STEP 1 — SEARCH INTENT ANALYSIS (internal thinking)
 
 Before writing, determine:
+
 • The main search intent behind "${primaryKeyword}"
 • What users want to learn, compare, or solve
 • The most likely subtopics covered by top ranking pages
@@ -568,86 +598,100 @@ STEP 2 — ARTICLE STRUCTURE
 Write a complete SEO article using this format.
 
 # H1 Title
-Create a compelling title that includes the primary keyword
-and clearly communicates value.
+Create a compelling title that includes the primary keyword.
+
+Also include:
+
+Published Date: today's date  
+Last Updated: today's date  
+Estimated Reading Time
 
 ---
 
-## Introduction (150–200 words)
+## Introduction (200 words)
 
-• Start with an engaging hook
-• Explain the reader's problem or curiosity
-• Show why this topic matters
-• Briefly preview what the article will teach
-• Naturally include the primary keyword within the first 100 words
+• Start with a strong hook
+• Explain why the topic matters
+• Identify the reader's intent
+• Include the primary keyword within the first 100 words
 
 ---
 
 ## Table of Contents
+
 Generate a clickable table of contents using the H2 headings.
 
 ---
 
 ## Main Sections
 
-Write **6–8 comprehensive H2 sections** covering the topic fully.
+Write **7–8 comprehensive H2 sections**.
 
 Each section should:
-• Start with a clear explanation
-• Include helpful examples, lists, or insights
-• Use H3 subheadings when needed
+
+• Start with an explanation
+• Include helpful examples
+• Include bullet lists
+• Use H3 subheadings
 • Naturally include secondary keywords
-• Provide practical, useful information rather than generic explanations
+• Include contextual internal or external links
 
-Use:
-• bullet lists
-• short paragraphs
-• clear explanations
-
-Avoid filler text.
+Avoid filler content.
 
 ---
 
 ## Key Takeaways
-Provide 5–7 important insights the reader should remember.
+
+Provide **6–8 insights** readers should remember.
 
 ---
 
 ## Conclusion
 
-Summarize the article in 100–150 words and guide the reader
-toward the next logical step.
+Summarize the article in 150–200 words.
+
+Encourage readers to explore related guides.
 
 ---
 
 ## FAQ Section
 
-Write **5–7 frequently asked questions** related to the primary keyword.
+Write **6–8 frequently asked questions** related to the primary keyword.
 
-Each answer should be:
-40–80 words
-clear and direct.
+Each answer:
+
+• 50–80 words
+• direct and informative
 
 ---
 
 STEP 3 — SEO OPTIMIZATION OUTPUT
 
-After the article, generate:
+After the article generate:
 
-META TITLE
-(max 60 characters, include primary keyword)
+META TITLE  
+(max 60 characters)
 
-META DESCRIPTION
+META DESCRIPTION  
 (max 155 characters)
 
-URL SLUG
-(short, lowercase, hyphenated)
+URL SLUG  
+(short, lowercase)
+
+CANONICAL URL
 
 IMAGE ALT TEXT (5)
 
-PEOPLE ALSO ASK QUESTIONS (5 additional)
+PEOPLE ALSO ASK QUESTIONS (5)
 
-FAQ SCHEMA (JSON-LD)
+---
+
+STEP 4 — SCHEMA MARKUP
+
+Generate JSON-LD schema for:
+
+• Article schema
+• FAQ schema
 
 Use valid structured data format.
 
@@ -658,14 +702,15 @@ WRITING STYLE
 • Natural human tone
 • Informative and authoritative
 • Avoid keyword stuffing
-• Use short paragraphs for readability
-• Focus on value, clarity, and depth
+• Use short paragraphs
+• Maintain high readability
+• Focus on actionable insights
 
 --------------------------------------------------
 
 OUTPUT FORMAT
 
-Return the entire article in Markdown with this order:
+Return the entire article in Markdown in this order:
 
 1. Article Content
 2. Key Takeaways
@@ -673,7 +718,7 @@ Return the entire article in Markdown with this order:
 4. SEO Metadata
 5. Schema Markup
 
-Do not include any explanations outside the article.
+--------------------------------------------------
 
 STYLING RULES
 
@@ -684,7 +729,7 @@ The article will be rendered using a CSS class called:
 
 markdown-content
 
-Only return clean Markdown structure using:
+Only return clean Markdown using:
 
 # headings
 ## subheadings
