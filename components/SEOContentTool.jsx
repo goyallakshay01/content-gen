@@ -1,12 +1,10 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import MarkdownRenderer from "./MarkdownRenderer.jsx";
-import "./SEOContentTool.css";
+import "../components/styles/SEOContentTool.css";
 
 const TONES = ["Professional", "Conversational", "Authoritative", "Friendly"];
 const CONTENT_TYPES = ["Blog Post", "Product Description", "Landing Page", "Social Media", "Meta Description"];
-const LENGTHS = ["Short (~300 words)", "Medium (~600 words)", "Long (~1200 words)"];
-
 const SEARCH_INTENTS = ["Informational", "Commercial", "Transactional", "Navigational"];
 const LANGUAGES = ["English", "Arabic"];
 const AUDIENCES = [
@@ -22,6 +20,7 @@ const AUDIENCES = [
   "Property Seekers",
   "Financial Professionals"
 ];
+const BRAND_CACHE_PREFIX = "seo-brand-context:";
 
 export default function SEOContentTool() {
   const [topic, setTopic] = useState("");
@@ -45,7 +44,13 @@ export default function SEOContentTool() {
   const [showLibrary, setShowLibrary] = useState(false);
   const [loadingLibrary, setLoadingLibrary] = useState(false);
   const [saveError, setSaveError] = useState("");
-  const [suggestedTopics, setSuggestedTopics] = useState(['Real Estate Trends in Saudi Arabia', 'Luxury Property Investment Strategies', 'Navigating Saudi Real Estate Laws']);
+  const [suggestedTopics, setSuggestedTopics] = useState([
+    "D’Mansions by DarGlobal: Redefining Ultra-Luxury Living",
+    "Amaya Jeddah Plots: Investing in the Greenest Community in Saudi Arabia",
+    "Inside AIDA Muscat: A Coastal Luxury Lifestyle Destination",
+    "Exploring DarGlobal’s Landmark Projects in Dubai",
+    "The Astera: Aston Martin Designed Beachfront Residences in Ras Al Khaimah"
+  ]);
   const [topicLoading, setTopicLoading] = useState(false);
 
   const [selectedOption, setSelectedOption] = useState("");
@@ -74,6 +79,43 @@ export default function SEOContentTool() {
   const lsDelete = (key) => {
     try { localStorage.removeItem(key); return true; }
     catch { return false; }
+  };
+
+  const getCachedBrandContext = (brand) => {
+    try {
+      const key = `${BRAND_CACHE_PREFIX}${brand}`;
+      const cached = localStorage.getItem(key);
+      if (!cached) return null;
+
+      const parsed = JSON.parse(cached);
+
+      // cache expires after 7 days
+      const sevenDays = 7 * 24 * 60 * 60 * 1000;
+
+      if (Date.now() - parsed.savedAt > sevenDays) {
+        localStorage.removeItem(key);
+        return null;
+      }
+
+      return parsed.context;
+
+    } catch {
+      return null;
+    }
+  };
+
+  const setCachedBrandContext = (brand, context) => {
+    try {
+      const key = `${BRAND_CACHE_PREFIX}${brand}`;
+
+      localStorage.setItem(
+        key,
+        JSON.stringify({
+          context,
+          savedAt: Date.now()
+        })
+      );
+    } catch { }
   };
 
   const fetchSavedFiles = async () => {
@@ -156,87 +198,67 @@ export default function SEOContentTool() {
     URL.revokeObjectURL(url);
   };
 
-  const suggestTopics = async () => {
-    setSuggestedTopics([]);
-    setTopicLoading(true);
+  const generateBrandContext = async (brandName) => {
+    const cached = getCachedBrandContext(brandName);
 
-    const topicSuggestPrompt = `You are a senior real estate content strategist and market intelligence writer 
-specializing in Saudi Arabia’s luxury property market. You write for a premium real estate 
-media brand that covers NEW project launches, breaking investment news, and 
-emerging opportunities across the Kingdom of Saudi Arabia.
+    if (cached) {
+      console.log("Using cached brand context");
+      return cached;
+    }
 
-Your audience is:
-- Ultra-High-Net-Worth investors (Saudi + international)
-- Family offices actively allocating capital into Saudi real estate
-- Institutional and private investors tracking Vision 2030 pipelines
-- Expat HNW buyers watching Saudi freehold zone developments
-- Real estate funds and developers scouting partnership opportunities inside KSA
+    console.log("Fetching new brand context from AI");
 
-CORE CONTENT MISSION:
-Position the brand as the #1 Saudi real estate intelligence source for 
-investors who want to be FIRST to know about:
-→ New luxury project launches (off-plan & ready)
-→ Government-backed mega-developments going to market
-→ Emerging Saudi zones & cities being unlocked for private investment
-→ Policy changes opening new doors for foreign buyers in KSA
-→ Developer deals, IPOs, and funding rounds in the Saudi property sector
+    const brandPrompt = `
+You are a real estate market intelligence analyst and real estate content strategist.
 
----
+Create a structured intelligence profile and blog topic dataset focused on the company's NEW PROPERTY PROJECTS, DEVELOPMENTS, and INVESTMENT OPPORTUNITIES.
 
-Generate 25 blog topic ideas divided into the following categories:
+Brand Name: ${brandName}
 
-1. NEW PROJECT LAUNCH COVERAGE (6 topics)
-   → News-style articles announcing or deep-diving into brand new 
-     project launches in Saudi Arabia
-   → Examples of angle: first look, what's included, pricing tiers, 
-     ROI projections, who should buy
-   → Reference real Saudi projects like: NEOM, The Line, Sindalah Island, 
-     Diriyah Gate, Red Sea Global, Qiddiya, Roshn, Jeddah Central, Rua Al Madinah
+Focus strongly on:
+- New property launches
+- Ongoing real estate developments
+- Luxury projects
+- Land and plot developments
+- Strategic partnerships and investment deals
+- Emerging markets where the company is building projects
 
-2. INVESTOR NEWS & MARKET INTELLIGENCE (5 topics)
-   → Time-sensitive, data-driven news blogs for active investors
-   → Covers: policy shifts, new freehold zones, mortgage regulation 
-     updates, foreign ownership law changes, PIF-backed announcements
-   → Tone: urgent, credible, Bloomberg-style but accessible
+Return structured data.
 
-3. UPCOMING BUSINESS OPPORTUNITIES (5 topics)
-   → Forward-looking pieces on WHERE and WHAT to invest in next inside Saudi
-   → Focus on: pre-launch windows, early-bird pricing phases, 
-     undervalued emerging districts, commercial+residential mixed plays
-   → Include cities like: Riyadh North, NEOM regions, AlUla, 
-     Jeddah Waterfront, Eastern Province growth corridors
+BRAND PROFILE
+Brand Overview
+Headquarters
+Primary Markets
+Business Model
 
-4. ROI & INVESTMENT ANALYSIS BLOGS (5 topics)
-   → Data-backed comparisons and projections for HNW decision-making
-   → Examples: rental yield comparisons across Riyadh vs Jeddah, 
-     off-plan vs ready property ROI in 2025 KSA, 
-     capital appreciation forecasts in Vision 2030 zones
+KEY PROPERTY PROJECTS
+(List 5–8 notable or recent developments by the company)
 
-5. THOUGHT LEADERSHIP & FUTURE OUTLOOK (4 topics)
-   → Big-picture perspectives that establish brand authority
-   → Topics like: the next 5 years of Saudi real estate, 
-     how Vision 2030 is reshaping generational wealth in the Kingdom, 
-     why global billionaires are pivoting to Saudi property
+PROJECT INSIGHTS
+(Brief description of each project including location, property type, and investment appeal)
 
----
+BLOG TOPIC IDEAS (10)
+Create blog-friendly titles focused on:
+- New project launches
+- Luxury property developments
+- Investment opportunities
+- Regional real estate growth
+- Project design and lifestyle features
 
-FOR EACH TOPIC PROVIDE:
-- Blog title (specific, not generic)
-- Target keyword (for SEO)
-- Content angle (1-2 lines explaining the hook)
-- Funnel stage: [AWARENESS / CONSIDERATION / DECISION]
-- Best format: [News Article / Deep Dive / Listicle / Opinion / Data Report]
-- Urgency tag: [BREAKING / TRENDING / EVERGREEN / SEASONAL]
+TARGET BUYERS
+CORE PROPERTY TYPES
+REAL ESTATE MARKETS
 
----
+SEO KEYWORDS (15)
+Focus on project-based and investment-related real estate keywords.
 
-STRICT RULES:
-- NO generic titles — every title must name a specific Saudi city, project, 
-  policy, or number (e.g. "5 Off-Plan Projects in North Riyadh Launching Q1 2025")
-- Write titles that feel like premium financial media, not generic blogs
-- Prioritize Saudi Arabia exclusively
-- Reflect Islamic finance sensitivity and Gulf cultural investment values
-- Assume the reader manages serious capital and respects precision over hype`;
+COMPETITORS (5)
+
+CONTENT POSITIONING
+How the company positions its developments in the luxury or investment real estate market.
+
+Keep the response structured, concise, and blog-ready.
+`;
 
     try {
       const response = await fetch(
@@ -250,31 +272,130 @@ STRICT RULES:
           body: JSON.stringify({
             model: "mistral-small-latest",
             temperature: 0.3,
-            messages: [
-              { role: "user", content: topicSuggestPrompt }
-            ]
+            messages: [{ role: "user", content: brandPrompt }]
+          })
+        }
+      );
+
+      const data = await response.json();
+      const context = data?.choices?.[0]?.message?.content || "";
+
+      // store in cache
+      setCachedBrandContext(brandName, context);
+
+      return context;
+
+    } catch {
+      return "";
+    }
+  };
+
+  const suggestTopics = async () => {
+
+    if (!selectedOption) {
+      alert("Please select a brand first.");
+      return;
+    }
+
+    setSuggestedTopics([]);
+    setTopicLoading(true);
+
+    const brandName =
+      selectedOption === "option1"
+        ? "DarGlobal"
+        : selectedOption === "option2"
+          ? "Wasalt"
+          : "";
+
+    const brandContext = await generateBrandContext(brandName);
+
+    const topicSuggestPrompt = `
+You are a senior real estate content strategist and SEO expert.
+
+Below is the brand intelligence profile.
+
+----------------------------------
+${brandContext}
+----------------------------------
+
+Using the brand intelligence above, generate **high-value blog topics**
+that align with the company's business model, audience, and markets.
+
+Your audience may include:
+• Real estate investors
+• Property buyers
+• Developers
+• High-net-worth individuals
+• Institutional investors
+
+---
+
+Generate 25 blog topic ideas divided into the following categories:
+
+1. NEW PROJECT LAUNCH COVERAGE (6 topics)
+
+2. INVESTOR NEWS & MARKET INTELLIGENCE (5 topics)
+
+3. UPCOMING BUSINESS OPPORTUNITIES (5 topics)
+
+4. ROI & INVESTMENT ANALYSIS BLOGS (5 topics)
+
+5. THOUGHT LEADERSHIP & FUTURE OUTLOOK (4 topics)
+
+---
+
+FOR EACH TOPIC PROVIDE:
+
+- Blog title
+- Target keyword
+- Content angle (1–2 lines)
+- Funnel stage: [AWARENESS / CONSIDERATION / DECISION]
+- Best format: [News Article / Deep Dive / Listicle / Opinion / Data Report]
+- Urgency tag: [BREAKING / TRENDING / EVERGREEN / SEASONAL]
+
+---
+
+STRICT RULES
+
+• Titles must feel like premium financial media
+• Avoid generic blog titles
+• Use specific locations, numbers, or developments
+• Align topics with the brand's market focus
+• Prioritize real estate investment intelligence
+• Assume the reader manages serious capital
+
+Return topics in structured markdown format.
+`;
+
+    try {
+      const response = await fetch(
+        "https://api.mistral.ai/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${process.env.NEXT_PUBLIC_MYSTRAL_KEY}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: "mistral-small-latest",
+            temperature: 0.3,
+            messages: [{ role: "user", content: topicSuggestPrompt }]
           })
         }
       );
 
       const data = await response.json();
       const text = data?.choices?.[0]?.message?.content || "";
-      console.log("Raw topic suggestion response:", text);
-
-      if (!text) {
-        setSuggestedTopics("No content returned.");
-        setTopicLoading(false);
-        return;
-      }
 
       const matches = [...text.matchAll(/\*\*\d+\.\s*"([^"]+)"\*\*/g)];
       const titles = matches.map(m => m[1]);
-      setSuggestedTopics(titles);
-      setTopicLoading(false);
 
-    } catch (err) {
-      setSuggestedTopics("Error generating Topics. Please try again.");
+      setSuggestedTopics(titles);
+
+    } catch {
+      setSuggestedTopics("Error generating topics.");
     }
+
     setTopicLoading(false);
   };
 
@@ -468,6 +589,27 @@ Return the entire article in Markdown with this order:
 5. Schema Markup
 
 Do not include any explanations outside the article.
+
+STYLING RULES
+
+Do NOT include HTML styling.
+Do NOT include inline styles.
+
+The article will be rendered using a CSS class called:
+
+markdown-content
+
+Only return clean Markdown structure using:
+
+# headings
+## subheadings
+paragraphs
+lists
+tables
+images
+code blocks
+
+Do not add custom HTML wrappers.
 `;
 
     try {
@@ -492,8 +634,6 @@ Do not include any explanations outside the article.
       const data = await response.json();
       const text = data?.choices?.[0]?.message?.content || "";
 
-      console.log('text', text)
-
       if (!text) {
         setContent("No content returned.");
         setLoading(false);
@@ -502,7 +642,10 @@ Do not include any explanations outside the article.
 
       setContent(text);
 
-      const kw = keywords.split(",").map(k => k.trim()).filter(Boolean);
+      const kw = secondaryKeywords
+        .split(",")
+        .map(k => k.trim())
+        .filter(Boolean);
       const kwFound = kw.filter(k => text.toLowerCase().includes(k.toLowerCase())).length;
       const kwScore = kw.length > 0 ? Math.round((kwFound / kw.length) * 40) : 30;
       const wordTarget = 600;
@@ -523,13 +666,20 @@ Do not include any explanations outside the article.
 
   const scoreColor = seoScore >= 80 ? "#00d68f" : seoScore >= 60 ? "#ffaa00" : "#ff4d6d";
 
+  const clearBrandCache = (brand) => {
+    try {
+      localStorage.removeItem(`seo-brand-context:${brand}`);
+      alert("Brand intelligence refreshed. It will regenerate next time.");
+    } catch { }
+  };
+
   return (
     <>
       <div className="app">
         <div className="container">
           <div className="header">
             <div className="badge">✦ AI-Powered</div>
-            <h1>Content<br />Studio</h1>
+            <h1>Content Studio</h1>
             <p>Generate search-optimized content for any topic, instantly.</p>
             <div className="header-actions">
               <button
@@ -586,12 +736,30 @@ Do not include any explanations outside the article.
             {/* Controls */}
             <div className="panel">
               <div className="panel-title">⚙ Configure</div>
-              <div className="dropdown-group">
-                <select className="dropdown" value={selectedOption} onChange={e => setSelectedOption(e.target.value)}>
-                  <option value="">Select an option</option>
-                  <option value="option1">Darglobal</option>
-                  <option value="option2">Wasalt</option>
+              <div className="dropdown-group brand-select">
+                <select
+                  className="dropdown"
+                  value={selectedOption}
+                  onChange={e => setSelectedOption(e.target.value)}
+                >
+                  <option value="">Select Brand</option>
+                  <option value="darglobal">Darglobal</option>
+                  <option value="wasalt">Wasalt</option>
                 </select>
+
+                <button
+                  className="refresh-brand-btn"
+                  onClick={() => {
+                    if (!selectedOption) {
+                      alert("Select a brand first");
+                      return;
+                    }
+                    clearBrandCache(selectedOption);
+                  }}
+                  title="Refresh brand intelligence"
+                >
+                  ⟳
+                </button>
               </div>
 
               <div className="field">

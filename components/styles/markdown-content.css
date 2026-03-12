@@ -1,0 +1,138 @@
+/* Main container */
+.markdown-content {
+  color: #374151;
+  line-height: 1.7;
+  font-size: 16px;
+}
+
+/* H1 */
+.markdown-content h1 {
+  font-size: 2.25rem;
+  font-weight: 700;
+  margin: 1.5rem 0;
+  color: #111827;
+}
+
+/* H2 */
+.markdown-content h2 {
+  font-size: 1.875rem;
+  font-weight: 600;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  color: #111827;
+}
+
+/* H3 */
+.markdown-content h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  color: #1f2937;
+}
+
+/* Paragraph */
+.markdown-content p {
+  margin: 0.75rem 0;
+  color: #374151;
+}
+
+/* Lists */
+.markdown-content ul {
+  list-style: disc;
+  margin-left: 1.5rem;
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.markdown-content ol {
+  list-style: decimal;
+  margin-left: 1.5rem;
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.markdown-content li {
+  margin: 0.25rem 0;
+}
+
+/* Images */
+.markdown-content figure {
+  margin: 1.5rem 0;
+}
+
+.markdown-content img {
+  width: 100%;
+  border-radius: 12px;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+}
+
+.markdown-content figcaption {
+  text-align: center;
+  font-size: 14px;
+  margin-top: 6px;
+  color: #6b7280;
+}
+
+/* Tables */
+.markdown-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+}
+
+.markdown-content th {
+  border: 1px solid #d1d5db;
+  padding: 10px;
+  background: #f3f4f6;
+  font-weight: 600;
+  text-align: left;
+}
+
+.markdown-content td {
+  border: 1px solid #d1d5db;
+  padding: 10px;
+}
+
+/* Code */
+.markdown-content code {
+  background: #f3f4f6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.markdown-content pre {
+  background: #111827;
+  color: #f9fafb;
+  padding: 16px;
+  border-radius: 10px;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+/* Divider */
+.markdown-content hr {
+  margin: 2.5rem 0;
+  border: none;
+  border-top: 1px solid #d1d5db;
+}
+
+/* Links */
+.markdown-content a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.markdown-content a:hover {
+  color: #1e40af;
+}
+
+.markdown-content h2 {
+  scroll-margin-top: 100px;
+}
+
+.markdown-content img {
+  aspect-ratio: 16/9;
+  object-fit: cover;
+}
