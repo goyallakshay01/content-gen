@@ -2,25 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import MarkdownRenderer from "./MarkdownRenderer.jsx";
 import "../components/styles/SEOContentTool.css";
-
-const TONES = ["Professional", "Conversational", "Authoritative", "Friendly"];
-const CONTENT_TYPES = ["Blog Post", "Product Description", "Landing Page", "Social Media", "Meta Description"];
-const SEARCH_INTENTS = ["Informational", "Commercial", "Transactional", "Navigational"];
-const LANGUAGES = ["English", "Arabic"];
-const AUDIENCES = [
-  "General Consumers",
-  "Business Owners",
-  "Marketing Professionals",
-  "Enterprise Decision Makers",
-  "Corporate Decision Makers",
-  "Real Estate Professionals",
-  "Developers & Builders",
-  "Investors",
-  "High Net Worth Individuals",
-  "Property Seekers",
-  "Financial Professionals"
-];
-const BRAND_CACHE_PREFIX = "seo-brand-context:";
+import { TONES, CONTENT_TYPES, SEARCH_INTENTS, LANGUAGES, AUDIENCES, BRAND_CACHE_PREFIX, LS_PREFIX } from "@/constants/categories";
 
 export default function SEOContentTool() {
   const [topic, setTopic] = useState("");
@@ -52,13 +34,10 @@ export default function SEOContentTool() {
     "The Astera: Aston Martin Designed Beachfront Residences in Ras Al Khaimah"
   ]);
   const [topicLoading, setTopicLoading] = useState(false);
-
-  const [selectedOption, setSelectedOption] = useState("");
+  const [selectedOption, setSelectedOption] = useState("Darglobal");
 
   const outputRef = useRef(null);
   const wordCount = (content || streamText).split(/\s+/).filter(Boolean).length;
-
-  const LS_PREFIX = "seo-content:";
 
   const lsGetAllKeys = () => {
     try {
@@ -81,9 +60,9 @@ export default function SEOContentTool() {
     catch { return false; }
   };
 
-  const getCachedBrandContext = (brand) => {
+  const getCachedBrandContext = () => {
     try {
-      const key = `${BRAND_CACHE_PREFIX}${brand}`;
+      const key = `${BRAND_CACHE_PREFIX}${selectedOption}`;
       const cached = localStorage.getItem(key);
       if (!cached) return null;
 
@@ -104,9 +83,9 @@ export default function SEOContentTool() {
     }
   };
 
-  const setCachedBrandContext = (brand, context) => {
+  const setCachedBrandContext = (context) => {
     try {
-      const key = `${BRAND_CACHE_PREFIX}${brand}`;
+      const key = `${BRAND_CACHE_PREFIX}${selectedOption}`;
 
       localStorage.setItem(
         key,
@@ -198,8 +177,8 @@ export default function SEOContentTool() {
     URL.revokeObjectURL(url);
   };
 
-  const generateBrandContext = async (brandName) => {
-    const cached = getCachedBrandContext(brandName);
+  const generateBrandContext = async () => {
+    const cached = getCachedBrandContext();
 
     if (cached) {
       console.log("Using cached brand context");
@@ -213,7 +192,7 @@ You are a real estate market intelligence analyst and real estate content strate
 
 Create a structured intelligence profile and blog topic dataset focused on the company's NEW PROPERTY PROJECTS, DEVELOPMENTS, and INVESTMENT OPPORTUNITIES.
 
-Brand Name: ${brandName}
+Brand Name: ${selectedOption}
 
 Focus strongly on:
 - New property launches
@@ -280,8 +259,7 @@ Keep the response structured, concise, and blog-ready.
       const data = await response.json();
       const context = data?.choices?.[0]?.message?.content || "";
 
-      // store in cache
-      setCachedBrandContext(brandName, context);
+      setCachedBrandContext(context);
 
       return context;
 
@@ -300,58 +278,61 @@ Keep the response structured, concise, and blog-ready.
     setSuggestedTopics([]);
     setTopicLoading(true);
 
-    const brandName =
-      selectedOption === "option1"
-        ? "DarGlobal"
-        : selectedOption === "option2"
-          ? "Wasalt"
-          : "";
-
-    const brandContext = await generateBrandContext(brandName);
+    const brandContext = await generateBrandContext();
 
     const topicSuggestPrompt = `
-You are a senior real estate content strategist and luxury property market analyst.
+You are a senior luxury real estate content strategist and global property market analyst.
 
-Your goal is to generate **high-value blog topics for a luxury real estate investment blog.**
+Your goal is to generate **high-value SEO blog topics** for a luxury real estate investment blog.
 
-The company focuses on:
-• branded residences by ${brandContext}
-• luxury developments
-• global real estate investment opportunities
-• projects by developers such as ${brandContext} and other global collaborations
+Developer Brand: ${selectedOption}
 
-These blogs will support:
-• internal linking to property pages
-• internal linking to investment guides
-• external linking to market data sources
-
-Therefore the tone should sound like **premium real estate media with developer authority.**
-
----
-
-STEP 1 — Discover Current Projects
-
-Identify **5–6 active luxury real estate projects or branded residence collaborations globally**.
-
-Focus on developments associated with:
-
+Brand Intelligence:
 ${brandContext}
 
-Examples of search intent to simulate:
+The blog focuses on:
 
-- "${brandContext} new launches"
-- "${brandContext} branded residences"
-- "${brandContext} luxury developments"
-- "${brandContext} Lamborghini collaboration"
-- "${brandContext} Aston Martin residences"
+• branded residences  
+• luxury property developments  
+• global real estate investment opportunities  
+• major collaborations with luxury brands  
+• new property launches  
+
+The tone should sound like **premium real estate media such as Knight Frank, Bloomberg, or Architectural Digest.**
+
+--------------------------------------------------
+
+STEP 1 — Discover Active Projects
+
+Identify **5–6 REAL luxury real estate developments** associated with:
+
+${selectedOption}
+
+These may include:
+
+• branded residences  
+• luxury villa communities  
+• high-end apartment developments  
+• golf communities  
+• coastal luxury developments  
 
 For each project capture:
 
-Project: name  
-Location: city / country  
+Project: project name  
+Location: city, country  
 Brand: collaboration partner (if applicable)
 
----
+Example:
+
+Project: Tierra Viva  
+Location: Marbella, Spain  
+Brand: Lamborghini
+
+Project: The Astera  
+Location: Ras Al Khaimah, UAE  
+Brand: Aston Martin
+
+--------------------------------------------------
 
 STEP 2 — Create Projects Context
 
@@ -360,64 +341,84 @@ Return a section called:
 ## Projects Context
 
 Project: Name  
-Location: City / Country  
-Brand: Collaboration partner
+Location: City, Country  
+Brand: Brand partner or "None"
 
----
+Repeat for 5–6 projects.
 
-STEP 3 — Generate Blog Topics
+--------------------------------------------------
 
-Using ONLY the projects identified above, generate **5–6 premium blog titles.**
+STEP 3 — Generate SEO Blog Topics
 
-IMPORTANT RULES
+Using ONLY the projects listed above, generate **5–6 premium SEO blog titles.**
 
-• The **title MUST start with the property name**
-• Include the **brand collaboration**
-• Mention **DarGlobal in the title when possible**
-• Mention the **location**
-• Titles must sound like **financial media or luxury real estate publications**
+--------------------------------------------------
 
-This helps create **internal linking opportunities** between:
+TITLE RULES (VERY IMPORTANT)
 
-• project pages  
-• branded residence articles  
-• luxury real estate market reports  
-• investment analysis blogs  
+DO NOT use placeholders like:
 
----
+[Brand]  
+[City]  
+[Project Name]
 
-TITLE STRUCTURE (MANDATORY)
+Always replace them with REAL values.
 
-Use patterns like:
+Brand name must always be:
 
-[Project Name] by [Brand]: How ${brandContext} Is Redefining Luxury Living in [City]
+${selectedOption}
 
-[Project Name] by [Brand]: Inside ${brandContext}'s Most Ambitious Branded Residence
+The city must be derived from the project location.
 
-[Project Name] by [Brand]: Why Investors Are Watching ${brandContext}'s [City] Development
+Examples:
 
-[Project Name] by [Brand]: A New Landmark in ${brandContext}'s Global Luxury Portfolio
+Location: Marbella, Spain → City: Marbella  
+Location: Muscat, Oman → City: Muscat  
+Location: Ras Al Khaimah, UAE → City: Ras Al Khaimah  
 
-If no brand exists:
+--------------------------------------------------
 
-[Project Name]: A New Luxury Development by ${brandContext} in [City]
+TITLE REQUIREMENTS
 
----
+Every title MUST include:
+
+• project name  
+• collaboration brand if available  
+• developer name (${selectedOption})  
+• project city  
+
+Titles must sound like **financial media or luxury real estate publications.**
+
+--------------------------------------------------
+
+TITLE STYLE EXAMPLES
+
+Tierra Viva by Lamborghini: How ${selectedOption} Is Redefining Luxury Living in Marbella
+
+The Astera by Aston Martin: Inside ${selectedOption}'s Iconic Beachfront Residences in Ras Al Khaimah
+
+AIDA Oman: Why Investors Are Watching ${selectedOption}'s Coastal Development in Muscat
+
+W Residences Dubai Harbour: How ${selectedOption} Is Expanding Luxury Living in Dubai
+
+--------------------------------------------------
 
 SEARCH TERM RULES
 
-Search terms must include:
+Each topic must include an SEO search term.
+
+Search terms should contain:
 
 • project name  
-• brand collaboration  
+• collaboration brand  
 • location  
-• developer name when relevant
+• ${selectedOption}
 
 Example:
 
-Search term: "Tierra Viva Lamborghini villas Marbella DarGlobal"
+Search term: Tierra Viva Lamborghini villas Marbella ${selectedOption}
 
----
+--------------------------------------------------
 
 RETURN FORMAT
 
@@ -431,18 +432,19 @@ Project: Example
 Location: Example  
 Brand: Example
 
+--------------------------------------------------
 
 ## Blog Topics
 
 Title: Example premium headline  
-Search term: SEO keyword
+Search term: Example SEO keyword
 
 Title: Example premium headline  
-Search term: SEO keyword
+Search term: Example SEO keyword
 
 Generate **5–6 topics only**.
 
-Do not include numbering or explanations.
+Do NOT include numbering or explanations.
 `;
 
     try {
@@ -465,14 +467,18 @@ Do not include numbering or explanations.
       const data = await response.json();
       const text = data?.choices?.[0]?.message?.content || "";
 
-      const topicMatches = [
-        ...text.matchAll(/\*\*Title:\*\*\s*(.*?)\n\*\*Search term:\*\*\s*"([^"]+)"/g)
-      ];
+      console.log(text);
 
-      const topics = topicMatches.map(m => ({
-        title: m[1].trim(),
-        searchTerm: m[2].trim()
-      }));
+      const blocks = text.split("Title:").slice(1);
+
+      const topics = blocks.map(block => {
+        const [titleLine, searchLine] = block.split("\n");
+
+        return {
+          title: titleLine.trim(),
+          searchTerm: searchLine.replace("Search term:", "").trim()
+        };
+      });
 
       setSuggestedTopics(topics);
 
@@ -481,6 +487,76 @@ Do not include numbering or explanations.
     }
 
     setTopicLoading(false);
+  };
+
+  const getProjectLinksFromTopic = async (topic) => {
+
+    const prompt = `
+You are a real estate SEO assistant.
+
+Your job is to detect property projects mentioned in the topic
+and return internal links for them.
+
+Brand: ${selectedOption}
+
+Topic:
+${topic}
+
+Instructions:
+
+1. Identify if the topic references any property project.
+2. Only return projects developed by the brand.
+3. Convert project names into SEO slugs.
+
+Example format:
+
+Project: Tierra Viva
+Link: /projects/tierra-viva
+
+Project: AIDA Oman
+Link: /projects/aida-oman
+
+Rules:
+- Maximum 5 links
+- Only return valid projects
+- If no projects found return "None"
+
+Output format:
+
+Project Links:
+
+Project: Name
+Link: /projects/slug
+
+Project: Name
+Link: /projects/slug
+`;
+
+    try {
+      const response = await fetch(
+        "https://api.mistral.ai/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${process.env.NEXT_PUBLIC_MYSTRAL_KEY}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: "mistral-small-latest",
+            temperature: 0.2,
+            messages: [{ role: "user", content: prompt }]
+          })
+        }
+      );
+
+      const data = await response.json();
+      const text = data?.choices?.[0]?.message?.content || "";
+
+      return text;
+
+    } catch {
+      return "";
+    }
   };
 
   const generateContent = async () => {
@@ -500,68 +576,17 @@ Do not include numbering or explanations.
 
     const lengthGuide = intentLengthMap[searchIntent];
 
+    const projectLinks = await getProjectLinksFromTopic(topic);
+
     const prompt = `
-You are an elite SEO strategist and long-form content writer trained to produce 
-high-ranking, search-optimized content similar to the quality produced by professional SEO tools.
 
-Your goal is to create a comprehensive article designed to rank on Google by matching search intent,
-covering semantic topics, and providing genuine value to readers.
+You are an elite SEO strategist, real estate content expert, and long-form blog writer.
 
-Target average article length: **3,800–4,000 words (approx. 3,856 words).**
+Your task is to generate a **high-ranking SEO article optimized for Google search** using semantic SEO, search intent matching, and authoritative information.
 
---------------------------------------------------
+The content must follow **modern SEO best practices used by professional tools like SurferSEO, Clearscope, and MarketMuse.**
 
-IMAGE GENERATION RULES
-
-For every H2 section in the article:
-
-1. Immediately after the H2 heading, insert a markdown image.
-2. Use this exact format:
-
-![ALT TEXT](IMAGE_GENERATION_PROMPT)
-
-3. The ALT TEXT must describe the image clearly for SEO.
-4. The IMAGE_GENERATION_PROMPT must be a cinematic, ultra-realistic image description.
-5. Images should relate directly to the section topic.
-6. Use a 16:9 composition.
-7. Maximum 6 images in the article.
-
-Example:
-
-## Why Dubai Luxury Real Estate?
-
-![Luxury Dubai skyline with Burj Khalifa](luxury dubai skyline sunset aerial view ultra realistic 16:9 real estate cityscape)
-
-Then continue writing the section content.
-
---------------------------------------------------
-
-LINKING RULES
-
-Include both **internal and external links** naturally inside the content.
-
-INTERNAL LINKS
-Link to relevant internal blog articles or property pages using contextual anchor text.
-
-Example:
-[Dubai luxury property investment guide](/blog/dubai-luxury-property-investment-guide)
-
-Use 4–6 internal links throughout the article.
-
-EXTERNAL LINKS
-Link to authoritative external resources such as:
-
-• government real estate data
-• global property reports
-• economic data sources
-• credible industry publications
-
-Example:
-[Knight Frank Global Wealth Report](https://www.knightfrank.com/research)
-
-Use 3–5 external links maximum.
-
-Do not overlink.
+Target article length: **3500–4000 words**
 
 --------------------------------------------------
 
@@ -575,19 +600,25 @@ Search Intent: ${searchIntent}
 Content Type: ${contentType}
 Target Audience: ${targetAudience}
 Country Target: ${country || "Global"}
-Target Word Count: ${lengthGuide || "3856"}
+Target Word Count: ${lengthGuide || "3800"}
+Brand Name: ${selectedOption}
+Project Links: ${projectLinks}
 
 --------------------------------------------------
 
-STEP 1 — SEARCH INTENT ANALYSIS (internal thinking)
+STEP 1 — SEARCH INTENT ANALYSIS (internal reasoning)
 
-Before writing, determine:
+Before writing the article:
 
-• The main search intent behind "${primaryKeyword}"
-• What users want to learn, compare, or solve
-• The most likely subtopics covered by top ranking pages
+Determine:
 
-Use this to guide the article structure.
+• the main search intent behind the keyword
+• informational / commercial / transactional intent
+• semantic topics used by top ranking pages
+• user pain points
+• buyer concerns
+
+Use this internally to design the structure.
 
 Do NOT show this analysis in the output.
 
@@ -595,12 +626,13 @@ Do NOT show this analysis in the output.
 
 STEP 2 — ARTICLE STRUCTURE
 
-Write a complete SEO article using this format.
+Write a full SEO article with the following format.
 
 # H1 Title
-Create a compelling title that includes the primary keyword.
 
-Also include:
+Create a compelling title including the **Primary Keyword**
+
+Add:
 
 Published Date: today's date  
 Last Updated: today's date  
@@ -608,66 +640,200 @@ Estimated Reading Time
 
 ---
 
-## Introduction (200 words)
+## Introduction
 
-• Start with a strong hook
-• Explain why the topic matters
-• Identify the reader's intent
-• Include the primary keyword within the first 100 words
+150–200 words
+
+Include:
+
+• strong hook
+• search intent explanation
+• why the topic matters
+• primary keyword within first 100 words
 
 ---
 
 ## Table of Contents
 
-Generate a clickable table of contents using the H2 headings.
+Generate anchor links using this format:
+
+- [Section Title](#section-id)
+
+Each section must have an **id attribute**.
+
+Example:
+
+## Why Dubai Real Estate Is Growing
+{id="dubai-real-estate-growth"}
 
 ---
 
-## Main Sections
+## Main Article Sections
 
-Write **7–8 comprehensive H2 sections**.
+Write **7–8 H2 sections**
 
-Each section should:
+For each section:
 
-• Start with an explanation
-• Include helpful examples
-• Include bullet lists
-• Use H3 subheadings
-• Naturally include secondary keywords
-• Include contextual internal or external links
+1️⃣ Insert an image immediately after the heading.
+
+Format:
+
+![ALT TEXT](IMAGE_GENERATION_PROMPT)
+
+Rules:
+
+• cinematic ultra realistic
+• architectural photography
+• 16:9 composition
+• max 6 images in article
+
+Example:
+
+![luxury golf villas overlooking ocean cliffs](ultra luxury golf community aerial sunset ocean cliffs cinematic architecture photography 16:9)
+
+---
+
+Each section must include:
+
+• clear explanation
+• bullet lists
+• H3 subsections
+• examples
+• data insights
+• secondary keywords naturally
 
 Avoid filler content.
 
 ---
 
+INTERNAL LINKING RULES
+
+Use contextual internal links to brand pages or project pages.
+
+Example:
+
+[Luxury villas in Aida Oman](/projects/aida-oman)
+
+Use **4–6 internal links**.
+
+If project links are provided in input variables, prioritize those.
+
+---
+
+EXTERNAL LINKING RULES
+
+Use **3–5 external links** from authoritative sources such as:
+
+• government real estate reports
+• global property market reports
+• economic publications
+• developer official websites
+
+Example:
+
+[Knight Frank Global Wealth Report](https://www.knightfrank.com/research)
+
+Do not overlink.
+
+---
+
+KEYWORD HIGHLIGHTING
+
+Highlight important keywords using **bold formatting**
+
+Example:
+
+**Dubai luxury real estate market**
+
+Do NOT overuse bold formatting.
+
+---
+
+## Investment Potential Section
+
+Include a section discussing:
+
+• ROI potential
+• property demand
+• rental yield
+• long term value
+
+Use bullet points.
+
+---
+
+## Developer or Brand Section
+
+Add credibility about the developer or brand.
+
+Include:
+
+• developer background
+• reputation
+• previous projects
+• market credibility
+
+This improves **E-E-A-T signals**.
+
+---
+
 ## Key Takeaways
 
-Provide **6–8 insights** readers should remember.
+Provide **6–8 key insights**
+
+Format:
+
+• insight
+• insight
+• insight
+
+Include both:
+
+✔ advantages  
+✔ considerations
 
 ---
 
 ## Conclusion
 
-Summarize the article in 150–200 words.
+150–200 words summarizing the article.
 
-Encourage readers to explore related guides.
+Encourage readers to explore related guides or property listings.
+
+---
+
+## Call To Action
+
+Add a CTA block encouraging users to:
+
+• explore properties
+• book consultation
+• download brochure
+• view project details
 
 ---
 
 ## FAQ Section
 
-Write **6–8 frequently asked questions** related to the primary keyword.
+Generate **6–8 property related questions**
 
 Each answer:
 
-• 50–80 words
-• direct and informative
+50–80 words.
+
+Focus on:
+
+• investment
+• property details
+• developer
+• location
+• buying process
 
 ---
 
-STEP 3 — SEO OPTIMIZATION OUTPUT
+STEP 3 — SEO METADATA
 
-After the article generate:
+After the article output:
 
 META TITLE  
 (max 60 characters)
@@ -675,12 +841,15 @@ META TITLE
 META DESCRIPTION  
 (max 155 characters)
 
-URL SLUG  
-(short, lowercase)
+FOCUS KEYWORD
+
+SECONDARY KEYWORDS
+
+URL SLUG
 
 CANONICAL URL
 
-IMAGE ALT TEXT (5)
+IMAGE ALT TEXT LIST (5)
 
 PEOPLE ALSO ASK QUESTIONS (5)
 
@@ -688,58 +857,82 @@ PEOPLE ALSO ASK QUESTIONS (5)
 
 STEP 4 — SCHEMA MARKUP
 
-Generate JSON-LD schema for:
+Generate valid **JSON-LD structured data** for:
 
-• Article schema
-• FAQ schema
+1️⃣ BlogPosting Schema
 
-Use valid structured data format.
+2️⃣ FAQPage Schema
 
---------------------------------------------------
+3️⃣ BreadcrumbList Schema
+
+4️⃣ Organization Schema
+
+Ensure markup passes **Google Rich Results Test**.
+
+---
+
+STEP 5 — IMAGE DATA
+
+Provide structured data for generated images:
+
+Image Title  
+Image Alt Text  
+Image Prompt  
+Suggested File Name
+
+---
 
 WRITING STYLE
 
-• Natural human tone
-• Informative and authoritative
-• Avoid keyword stuffing
-• Use short paragraphs
-• Maintain high readability
-• Focus on actionable insights
+Use a **human, authoritative tone**
 
---------------------------------------------------
+Follow these rules:
+
+• short paragraphs
+• high readability
+• clear explanations
+• no keyword stuffing
+• useful insights
+• actionable information
+
+---
 
 OUTPUT FORMAT
 
-Return the entire article in Markdown in this order:
+Return the response in this exact order:
 
-1. Article Content
-2. Key Takeaways
-3. FAQ
-4. SEO Metadata
-5. Schema Markup
+1️⃣ Article Content  
+2️⃣ Table of Contents  
+3️⃣ Key Takeaways  
+4️⃣ FAQ Section  
+5️⃣ SEO Metadata  
+6️⃣ Image Metadata  
+7️⃣ Schema Markup
 
---------------------------------------------------
+---
 
-STYLING RULES
+FORMATTING RULES
 
-Do NOT include HTML styling.
-Do NOT include inline styles.
+Return **clean Markdown only**
 
-The article will be rendered using a CSS class called:
+Allowed elements:
+
+# headings  
+## headings  
+### headings  
+paragraphs  
+bullet lists  
+tables  
+images  
+code blocks
+
+Do NOT include inline styles.  
+Do NOT include HTML wrappers.
+
+The article will be rendered using CSS class:
 
 markdown-content
 
-Only return clean Markdown using:
-
-# headings
-## subheadings
-paragraphs
-lists
-tables
-images
-code blocks
-
-Do not add custom HTML wrappers.
 `;
 
     try {
@@ -922,9 +1115,10 @@ Do not add custom HTML wrappers.
               <div className="field">
                 <label className="label">Content Type</label>
                 <div className="chips">
-                  {CONTENT_TYPES.map(t => (
+                  Blog Post
+                  {/* {CONTENT_TYPES.map(t => (
                     <div key={t} className={`chip ${contentType === t ? "active" : ""}`} onClick={() => setContentType(t)}>{t}</div>
-                  ))}
+                  ))} */}
                 </div>
               </div>
 
